@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --color-dark-bg: #090d16;
+  --color-dark-card: #111827;
+  --color-dark-card-hover: #162032;
+  --color-dark-sidebar: #0d1322;
+  --color-dark-border: #1f293d;
+
+  --color-primary: #f59e0b;
+  --color-primary-hover: #d97706;
+  --color-primary-light: rgba(245, 158, 11, 0.15);
+  --color-primary-glow: rgba(245, 158, 11, 0.35);
+
+  --color-status-recibida: #3b82f6;
+  --color-status-diagnostico: #8b5cf6;
+  --color-status-reparacion: #f59e0b;
+  --color-status-lista: #10b981;
+  --color-status-entregada: #06b6d4;
+  --color-status-cancelada: #ef4444;
+
+  --color-danger: #ef4444;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+}
+
+/* Base Body Styles */
+body {
+  font-family: var(--font-sans);
+  background-color: #090d16;
+  color: #f3f4f6;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f293d;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
+
+/* Thermal Print Styles (Media Print only) */
+#print-container {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #print-container,
+  #print-container * {
+    visibility: visible;
+  }
+
+  #print-container {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    color: #000 !important;
+    background: #fff !important;
+    padding: 20px;
+    font-family: sans-serif;
+  }
+
+  .print-ticket {
+    max-width: 320px;
+    margin: 0 auto;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .print-header {
+    text-align: center;
+    border-bottom: 2px dashed #000;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .print-header h2 {
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+  }
+
+  .print-table th,
+  .print-table td {
+    padding: 6px 4px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .print-table th {
+    border-bottom: 2px solid #000;
+  }
+
+  .print-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 11px;
+    border-top: 1px dashed #000;
+    padding-top: 10px;
+  }
+}

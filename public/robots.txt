@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Disallow: /src/
+Disallow: /*.json$
+
+Sitemap: https://arktechlabs.netlify.app/sitemap.xml
