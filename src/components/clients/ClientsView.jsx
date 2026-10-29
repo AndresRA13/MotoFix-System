@@ -29,7 +29,7 @@ export default function ClientsView({ onOpenVehicleHistory }) {
   return (
     <section className="animate-in fade-in duration-300">
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <div className="relative min-w-[280px]">
+        <div className="relative w-full sm:w-auto sm:min-w-[280px] max-w-md">
           <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
           <input
             type="text"
@@ -42,7 +42,7 @@ export default function ClientsView({ onOpenVehicleHistory }) {
       </div>
 
       <div className="w-full overflow-x-auto bg-dark-card border border-dark-border rounded-xl">
-        <table className="w-full border-collapse text-left text-sm">
+        <table className="w-full border-collapse text-left text-sm min-w-[750px]">
           <thead>
             <tr>
               <th className="bg-white/[0.02] text-gray-400 font-bold uppercase text-xs tracking-wider px-5 py-4 border-b border-dark-border">Cliente</th>

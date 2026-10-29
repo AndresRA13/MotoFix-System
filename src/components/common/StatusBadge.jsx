@@ -37,7 +37,7 @@ export default function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.recibida;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${cfg.classes}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide border whitespace-nowrap shrink-0 ${cfg.classes}`}
     >
       <i className={`fa-solid ${cfg.icon}`}></i> {cfg.label}
     </span>

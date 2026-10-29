@@ -26,7 +26,7 @@ export default function DashboardView({ onViewDetail }) {
   return (
     <section className="animate-in fade-in duration-300">
       {/* Tarjetas KPI */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
         <MetricCard
           label="Órdenes Activas"
           value={metrics.activeOrdersCount}
@@ -66,18 +66,18 @@ export default function DashboardView({ onViewDetail }) {
 
       {/* Gráficos y Repuestos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 bg-dark-card border border-dark-border rounded-xl p-6">
+        <div className="lg:col-span-2 bg-dark-card border border-dark-border rounded-xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2.5">
+            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
               <i className="fa-solid fa-chart-line text-amber-500"></i> Resumen de Órdenes por Estado
             </h3>
           </div>
           <StatusChart orders={workOrders} />
         </div>
 
-        <div className="bg-dark-card border border-dark-border rounded-xl p-6">
+        <div className="bg-dark-card border border-dark-border rounded-xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2.5">
+            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
               <i className="fa-solid fa-circle-exclamation text-amber-500"></i> Repuestos con Bajo Stock
             </h3>
           </div>

@@ -84,7 +84,7 @@ export default function SettingsView() {
     <section className="animate-in fade-in duration-300">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Formulario de Información de Taller */}
-        <div className="lg:col-span-2 bg-dark-card border border-dark-border rounded-xl p-6">
+        <div className="lg:col-span-2 bg-dark-card border border-dark-border rounded-xl p-4 sm:p-6">
           <h3 className="text-base font-bold text-white flex items-center gap-2 mb-5">
             <i className="fa-solid fa-store text-amber-500"></i> Información del Taller Mecánico
           </h3>
@@ -171,7 +171,7 @@ export default function SettingsView() {
 
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-2 self-start px-5 py-2.5 text-sm font-bold rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black shadow-md hover:brightness-110 transition-all cursor-pointer mt-2"
+              className="inline-flex items-center justify-center gap-2 self-stretch sm:self-start px-5 py-2.5 text-sm font-bold rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black shadow-md hover:brightness-110 transition-all cursor-pointer mt-2 w-full sm:w-auto"
             >
               <i className="fa-solid fa-floppy-disk"></i> Guardar Configuración
             </button>
@@ -179,7 +179,7 @@ export default function SettingsView() {
         </div>
 
         {/* Copia de seguridad y restablecimiento */}
-        <div className="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col justify-between">
+        <div className="bg-dark-card border border-dark-border rounded-xl p-4 sm:p-6 flex flex-col justify-between">
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2 mb-5">
               <i className="fa-solid fa-database text-amber-500"></i> Copia de Seguridad

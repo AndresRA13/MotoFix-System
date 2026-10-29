@@ -39,8 +39,8 @@ export default function OrdersView({ onOpenNewOrder, onEditOrder, onViewDetail }
 
   return (
     <section className="animate-in fade-in duration-300">
-      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <div className="relative min-w-[280px]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+        <div className="relative w-full sm:w-auto sm:min-w-[280px] flex-1 max-w-md">
           <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
           <input
             type="text"
@@ -51,9 +51,9 @@ export default function OrdersView({ onOpenNewOrder, onEditOrder, onViewDetail }
           />
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
           <select
-            className="bg-dark-card border border-dark-border rounded-lg px-3.5 py-2.5 text-gray-100 text-sm focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
+            className="bg-dark-card border border-dark-border rounded-lg px-3.5 py-2.5 text-gray-100 text-sm focus:outline-none focus:border-amber-500 transition-all cursor-pointer flex-1 sm:flex-none"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -65,7 +65,7 @@ export default function OrdersView({ onOpenNewOrder, onEditOrder, onViewDetail }
           </select>
 
           <button
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black shadow-[0_0_20px_rgba(245,158,11,0.25)] hover:brightness-110 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:-translate-y-0.5 transition-all cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black shadow-[0_0_20px_rgba(245,158,11,0.25)] hover:brightness-110 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all cursor-pointer shrink-0"
             onClick={handleOpenNewOrder}
           >
             <i className="fa-solid fa-plus"></i> Nueva Orden
@@ -74,7 +74,7 @@ export default function OrdersView({ onOpenNewOrder, onEditOrder, onViewDetail }
       </div>
 
       <div className="w-full overflow-x-auto bg-dark-card border border-dark-border rounded-xl">
-        <table className="w-full border-collapse text-left text-sm">
+        <table className="w-full border-collapse text-left text-sm min-w-[760px]">
           <thead>
             <tr>
               <th className="bg-white/[0.02] text-gray-400 font-bold uppercase text-xs tracking-wider px-5 py-4 border-b border-dark-border">N° Orden</th>

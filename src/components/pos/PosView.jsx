@@ -146,10 +146,10 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
 
   return (
     <section className="animate-in fade-in duration-300">
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
         <button
           type="button"
-          className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm rounded-lg transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm rounded-lg transition-all cursor-pointer ${
             posMode === 'order'
               ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold shadow-md'
               : 'bg-white/5 border border-dark-border text-gray-300 hover:bg-white/10'
@@ -163,7 +163,7 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
         </button>
         <button
           type="button"
-          className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm rounded-lg transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm rounded-lg transition-all cursor-pointer ${
             posMode === 'direct'
               ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold shadow-md'
               : 'bg-white/5 border border-dark-border text-gray-300 hover:bg-white/10'
@@ -179,7 +179,7 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* PANEL IZQUIERDO */}
-        <div className="bg-dark-card border border-dark-border rounded-xl p-6">
+        <div className="bg-dark-card border border-dark-border rounded-xl p-4 sm:p-6">
           {posMode === 'order' ? (
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2 mb-4">
@@ -310,8 +310,8 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
                 </div>
               </div>
 
-              <div className="bg-black/30 p-3.5 rounded-lg border border-dark-border">
-                <table className="w-full text-left text-xs">
+              <div className="bg-black/30 p-3.5 rounded-lg border border-dark-border overflow-x-auto">
+                <table className="w-full text-left text-xs min-w-[320px]">
                   <thead>
                     <tr className="border-b border-white/10 text-gray-400">
                       <th className="py-2">Repuesto</th>
@@ -355,12 +355,12 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
         </div>
 
         {/* PANEL DERECHO */}
-        <div className="bg-dark-card border border-dark-border rounded-xl p-6">
+        <div className="bg-dark-card border border-dark-border rounded-xl p-4 sm:p-6">
           <h3 className="text-base font-bold text-white flex items-center gap-2 mb-4">
             <i className="fa-solid fa-receipt text-amber-500"></i> Detalle de Cobro
           </h3>
 
-          <div className="bg-amber-500/15 border border-amber-500/30 rounded-xl p-4 px-5 flex items-center justify-between mb-5">
+          <div className="bg-amber-500/15 border border-amber-500/30 rounded-xl p-4 px-5 flex items-center justify-between mb-5 flex-wrap gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-gray-200">TOTAL A PAGAR:</span>
             <strong className="text-2xl font-black text-amber-500">{formatMoney(totalAmount, currency)}</strong>
           </div>
@@ -406,7 +406,7 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
 
             <button
               type="button"
-              className="w-full py-3.5 mt-2 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold text-sm shadow-[0_0_20px_rgba(245,158,11,0.25)] hover:brightness-110 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3.5 mt-2 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold text-xs sm:text-sm shadow-[0_0_20px_rgba(245,158,11,0.25)] hover:brightness-110 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-center"
               disabled={!canProcess}
               onClick={handleProcessPayment}
             >

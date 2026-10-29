@@ -59,7 +59,11 @@ export default function StatusChart({ orders }) {
             grid: { color: '#1f293d' }
           },
           x: {
-            ticks: { color: '#9ca3af' },
+            ticks: {
+              color: '#9ca3af',
+              font: { size: 10 },
+              maxRotation: 35
+            },
             grid: { display: false }
           }
         }

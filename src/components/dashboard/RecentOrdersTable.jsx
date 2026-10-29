@@ -35,7 +35,7 @@ export default function RecentOrdersTable({ orders, getVehicleById, getClientByI
 
   return (
     <div className="w-full overflow-x-auto bg-dark-card border border-dark-border rounded-xl">
-      <table className="w-full border-collapse text-left text-sm">
+      <table className="w-full border-collapse text-left text-sm min-w-[720px]">
         <thead>
           <tr>
             <th className="bg-white/[0.02] text-gray-400 font-bold uppercase text-xs tracking-wider px-5 py-4 border-b border-dark-border">N° Orden</th>

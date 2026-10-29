@@ -1,5 +1,5 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { useModal } from '../../context/ModalContext';
@@ -16,6 +16,26 @@ import VehicleHistoryModal from '../clients/VehicleHistoryModal';
 import PrintContainer from '../print/PrintContainer';
 
 export default function AppLayout() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  // Cerrar menú móvil al navegar a otra vista
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Evitar scroll del fondo cuando el cajón móvil esté abierto
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
   const {
     orderModal,
     closeOrderModal,
@@ -42,17 +62,22 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-dark-bg text-gray-100 font-sans flex">
-      <Sidebar />
+      {/* Menú lateral / Cajón hamburguesa deslizable */}
+      <Sidebar
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
 
-      <main className="flex-1 ml-[270px] max-lg:ml-20 flex flex-col min-w-0">
-        <Topbar />
+      {/* Área principal: ancho completo en móviles/tablets (ml-0) y con margen en PC (lg:ml-[270px]) */}
+      <main className="flex-1 lg:ml-[270px] ml-0 flex flex-col min-w-0 transition-all duration-300">
+        <Topbar onToggleMenu={() => setMobileMenuOpen(true)} />
 
-        <div className="p-8 max-md:p-4 flex-1">
+        <div className="p-3 sm:p-6 lg:p-8 flex-1 min-w-0">
           <Outlet />
         </div>
       </main>
 
-      {/* Global Modals */}
+      {/* Modales globales */}
       <NewOrderModal
         isOpen={orderModal.isOpen}
         onClose={closeOrderModal}
@@ -91,9 +116,8 @@ export default function AppLayout() {
         vehicleId={historyModal.vehicleId}
       />
 
-      {/* Print View for tickets */}
+      {/* Vista de impresión para tickets */}
       <PrintContainer printJob={printJob} />
     </div>
   );
 }
-

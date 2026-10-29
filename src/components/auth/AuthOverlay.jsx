@@ -42,7 +42,7 @@ export default function AuthOverlay() {
 
   return (
     <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,#111827_0%,#090d16_100%)] z-[9999] flex items-center justify-center p-4 backdrop-blur-md">
-      <div className="bg-dark-card border border-dark-border rounded-xl w-full max-w-md p-8 shadow-2xl flex flex-col gap-5 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-amber-500 before:to-amber-600">
+      <div className="bg-dark-card border border-dark-border rounded-xl w-full max-w-md p-6 sm:p-8 shadow-2xl flex flex-col gap-5 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-amber-500 before:to-amber-600">
         <div className="text-center">
           <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 text-black rounded-xl flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(245,158,11,0.25)] mx-auto mb-3">
             <i className="fa-solid fa-motorcycle"></i>

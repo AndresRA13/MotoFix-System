@@ -72,11 +72,11 @@ export default function HistoryView({ onViewDetail, onPrintOrder, onPrintDirectS
 
   return (
     <section className="animate-in fade-in duration-300">
-      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             type="button"
-            className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-lg transition-all cursor-pointer ${
+            className={`inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition-all cursor-pointer ${
               historyMode === 'orders'
                 ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold shadow-md'
                 : 'bg-white/5 border border-dark-border text-gray-300 hover:bg-white/10'
@@ -87,7 +87,7 @@ export default function HistoryView({ onViewDetail, onPrintOrder, onPrintDirectS
           </button>
           <button
             type="button"
-            className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-lg transition-all cursor-pointer ${
+            className={`inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition-all cursor-pointer ${
               historyMode === 'direct'
                 ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold shadow-md'
                 : 'bg-white/5 border border-dark-border text-gray-300 hover:bg-white/10'
@@ -98,7 +98,7 @@ export default function HistoryView({ onViewDetail, onPrintOrder, onPrintDirectS
           </button>
         </div>
 
-        <div className="relative min-w-[280px]">
+        <div className="relative w-full sm:w-auto sm:min-w-[280px] flex-1 max-w-md">
           <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
           <input
             type="text"
@@ -112,7 +112,7 @@ export default function HistoryView({ onViewDetail, onPrintOrder, onPrintDirectS
 
       {historyMode === 'orders' ? (
         <div className="w-full overflow-x-auto bg-dark-card border border-dark-border rounded-xl">
-          <table className="w-full border-collapse text-left text-sm">
+          <table className="w-full border-collapse text-left text-sm min-w-[780px]">
             <thead>
               <tr>
                 <th className="bg-white/[0.02] text-gray-400 font-bold uppercase text-xs tracking-wider px-5 py-4 border-b border-dark-border">N° Orden</th>
@@ -194,7 +194,7 @@ export default function HistoryView({ onViewDetail, onPrintOrder, onPrintDirectS
         </div>
       ) : (
         <div className="w-full overflow-x-auto bg-dark-card border border-dark-border rounded-xl">
-          <table className="w-full border-collapse text-left text-sm">
+          <table className="w-full border-collapse text-left text-sm min-w-[780px]">
             <thead>
               <tr>
                 <th className="bg-white/[0.02] text-gray-400 font-bold uppercase text-xs tracking-wider px-5 py-4 border-b border-dark-border">N° Venta</th>
