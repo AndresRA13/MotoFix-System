@@ -1,8 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
+import { useModal } from '../../context/ModalContext';
 
 export default function MechanicsView({ onOpenAddMechanic, onOpenEditMechanic }) {
+  const { openNewMechanic, openEditMechanic } = useModal();
+  const handleAdd = onOpenAddMechanic || openNewMechanic;
+  const handleEdit = onOpenEditMechanic || openEditMechanic;
+
   const { mechanics, deleteMechanic } = useData();
   const { showToast } = useToast();
   const [search, setSearch] = useState('');
@@ -39,7 +44,7 @@ export default function MechanicsView({ onOpenAddMechanic, onOpenEditMechanic })
 
         <button
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black shadow-[0_0_20px_rgba(245,158,11,0.25)] hover:brightness-110 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all cursor-pointer"
-          onClick={onOpenAddMechanic}
+          onClick={handleAdd}
         >
           <i className="fa-solid fa-user-plus"></i> Agregar Mecánico
         </button>
@@ -80,7 +85,7 @@ export default function MechanicsView({ onOpenAddMechanic, onOpenEditMechanic })
                     <div className="flex items-center gap-1.5">
                       <button
                         className="w-8 h-8 rounded-lg bg-white/5 border border-dark-border text-gray-400 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center cursor-pointer"
-                        onClick={() => onOpenEditMechanic(m.id)}
+                        onClick={() => handleEdit(m.id)}
                         title="Editar"
                       >
                         <i className="fa-solid fa-pen"></i>

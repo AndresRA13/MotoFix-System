@@ -1,8 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import PlateBadge from '../common/PlateBadge';
 import { useData } from '../../context/DataContext';
+import { useModal } from '../../context/ModalContext';
 
 export default function ClientsView({ onOpenVehicleHistory }) {
+  const { openVehicleHistory } = useModal();
+  const handleOpenHistory = onOpenVehicleHistory || openVehicleHistory;
+
   const { clients, vehicles } = useData();
   const [search, setSearch] = useState('');
 
@@ -94,7 +98,7 @@ export default function ClientsView({ onOpenVehicleHistory }) {
                           <button
                             key={v.id}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-dark-border text-gray-300 hover:text-white hover:bg-white/10 text-xs font-semibold transition-all cursor-pointer"
-                            onClick={() => onOpenVehicleHistory(v.id)}
+                            onClick={() => handleOpenHistory(v.id)}
                           >
                             <i className="fa-solid fa-book-open text-amber-500"></i> Hoja de Vida {v.plate}
                           </button>

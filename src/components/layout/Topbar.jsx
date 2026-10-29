@@ -1,7 +1,9 @@
 import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
+import { useModal } from '../../context/ModalContext';
 
 const TITLES = {
   dashboard: {
@@ -38,17 +40,25 @@ const TITLES = {
   }
 };
 
-export default function Topbar({ activeTab, onOpenNewOrder }) {
+export default function Topbar({ onOpenNewOrder }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { settings } = useData();
   const { showToast } = useToast();
+  const { openNewOrder } = useModal();
 
-  const titleInfo = TITLES[activeTab] || TITLES.dashboard;
+  // Extract path name e.g. "/orders" -> "orders"
+  const currentTab = location.pathname.replace(/^\//, '').split('/')[0] || 'dashboard';
+  const titleInfo = TITLES[currentTab] || TITLES.dashboard;
 
   const handleLogout = async () => {
     await logout();
     showToast('Has cerrado sesión');
+    navigate('/login');
   };
+
+  const handleNewOrder = onOpenNewOrder || openNewOrder;
 
   return (
     <header className="h-[70px] bg-dark-card/85 backdrop-blur-md border-b border-dark-border px-8 max-md:px-4 flex items-center justify-between sticky top-0 z-[90]">
@@ -59,8 +69,9 @@ export default function Topbar({ activeTab, onOpenNewOrder }) {
 
       <div className="flex items-center gap-3.5">
         <button
+          type="button"
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black shadow-[0_0_20px_rgba(245,158,11,0.25)] hover:brightness-110 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:-translate-y-0.5 transition-all cursor-pointer"
-          onClick={onOpenNewOrder}
+          onClick={handleNewOrder}
         >
           <i className="fa-solid fa-plus"></i> Nueva Orden de Trabajo
         </button>
@@ -70,6 +81,7 @@ export default function Topbar({ activeTab, onOpenNewOrder }) {
             <i className="fa-solid fa-user-circle text-amber-500 text-base"></i>
             <span className="max-sm:hidden">{user.email || 'Administrador'}</span>
             <button
+              type="button"
               className="p-1 px-2 bg-white/5 border border-dark-border rounded text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               onClick={handleLogout}
               title="Cerrar Sesión"

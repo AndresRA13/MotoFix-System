@@ -2,9 +2,15 @@ import React, { useState, useMemo } from 'react';
 import PlateBadge from '../common/PlateBadge';
 import StatusBadge from '../common/StatusBadge';
 import { useData } from '../../context/DataContext';
+import { useModal } from '../../context/ModalContext';
 import { formatMoney, formatDate } from '../../utils/formatters';
 
 export default function OrdersView({ onOpenNewOrder, onEditOrder, onViewDetail }) {
+  const { openNewOrder, openEditOrder, openOrderDetail } = useModal();
+  const handleOpenNewOrder = onOpenNewOrder || openNewOrder;
+  const handleEditOrder = onEditOrder || openEditOrder;
+  const handleViewDetail = onViewDetail || openOrderDetail;
+
   const { workOrders, getVehicleById, getClientById, settings } = useData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('active_all');
@@ -60,7 +66,7 @@ export default function OrdersView({ onOpenNewOrder, onEditOrder, onViewDetail }
 
           <button
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black shadow-[0_0_20px_rgba(245,158,11,0.25)] hover:brightness-110 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:-translate-y-0.5 transition-all cursor-pointer"
-            onClick={onOpenNewOrder}
+            onClick={handleOpenNewOrder}
           >
             <i className="fa-solid fa-plus"></i> Nueva Orden
           </button>
@@ -128,14 +134,14 @@ export default function OrdersView({ onOpenNewOrder, onEditOrder, onViewDetail }
                       <div className="flex items-center gap-1.5">
                         <button
                           className="w-8 h-8 rounded-lg bg-white/5 border border-dark-border text-gray-400 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center cursor-pointer"
-                          onClick={() => onViewDetail(o.id)}
+                          onClick={() => handleViewDetail(o.id)}
                           title="Ver Detalle / Cambiar Estado"
                         >
                           <i className="fa-solid fa-eye"></i>
                         </button>
                         <button
                           className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black hover:brightness-110 transition-all flex items-center justify-center cursor-pointer"
-                          onClick={() => onEditOrder(o.id)}
+                          onClick={() => handleEditOrder(o.id)}
                           title="Editar Orden"
                         >
                           <i className="fa-solid fa-pen"></i>

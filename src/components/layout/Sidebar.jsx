@@ -1,29 +1,31 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 
-export default function Sidebar({ activeTab, setActiveTab }) {
+export default function Sidebar() {
   const { getDashboardMetrics } = useData();
   const metrics = getDashboardMetrics();
 
   const navItems = [
     { section: 'Operación Taller' },
-    { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie' },
+    { id: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: 'fa-chart-pie' },
     {
       id: 'orders',
+      path: '/orders',
       label: 'Órdenes Activas',
       icon: 'fa-wrench',
       badge: metrics.activeOrdersCount
     },
-    { id: 'pos', label: 'Cobro & POS', icon: 'fa-file-invoice-dollar' },
-    { id: 'history', label: 'Historial Entregadas', icon: 'fa-box-archive' },
+    { id: 'pos', path: '/pos', label: 'Cobro & POS', icon: 'fa-file-invoice-dollar' },
+    { id: 'history', path: '/history', label: 'Historial Entregadas', icon: 'fa-box-archive' },
 
     { section: 'Gestión' },
-    { id: 'mechanics', label: 'Mecánicos', icon: 'fa-user-gear' },
-    { id: 'inventory', label: 'Inventario & Tarifas', icon: 'fa-boxes-stacked' },
-    { id: 'clients', label: 'Clientes & Motos', icon: 'fa-address-book' },
+    { id: 'mechanics', path: '/mechanics', label: 'Mecánicos', icon: 'fa-user-gear' },
+    { id: 'inventory', path: '/inventory', label: 'Inventario & Tarifas', icon: 'fa-boxes-stacked' },
+    { id: 'clients', path: '/clients', label: 'Clientes & Motos', icon: 'fa-address-book' },
 
     { section: 'Sistema' },
-    { id: 'settings', label: 'Configuración', icon: 'fa-sliders' }
+    { id: 'settings', path: '/settings', label: 'Configuración', icon: 'fa-sliders' }
   ];
 
   return (
@@ -54,16 +56,17 @@ export default function Sidebar({ activeTab, setActiveTab }) {
               </div>
             );
           }
-          const isActive = activeTab === item.id;
           return (
-            <button
+            <NavLink
               key={item.id}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-semibold transition-all w-full text-left relative cursor-pointer max-lg:justify-center ${
-                isActive
-                  ? "text-amber-500 bg-amber-500/15 font-bold before:content-[''] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-amber-500 before:rounded-r before:shadow-[0_0_10px_#f59e0b]"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`}
-              onClick={() => setActiveTab(item.id)}
+              to={item.path}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-semibold transition-all w-full text-left relative cursor-pointer max-lg:justify-center ${
+                  isActive
+                    ? "text-amber-500 bg-amber-500/15 font-bold before:content-[''] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-amber-500 before:rounded-r before:shadow-[0_0_10px_#f59e0b]"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`
+              }
             >
               <i className={`fa-solid ${item.icon} text-lg w-5 text-center shrink-0`}></i>
               <span className="max-lg:hidden">{item.label}</span>
@@ -72,7 +75,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                   {item.badge}
                 </span>
               )}
-            </button>
+            </NavLink>
           );
         })}
       </nav>

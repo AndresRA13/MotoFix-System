@@ -1,9 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
+import { useModal } from '../../context/ModalContext';
 import { formatMoney } from '../../utils/formatters';
 
 export default function PosView({ onPrintOrder, onPrintDirectSale }) {
+  const { triggerPrint } = useModal();
+  const handlePrintOrder = onPrintOrder || ((order) => triggerPrint('order', order));
+  const handlePrintDirectSale = onPrintDirectSale || ((sale) => triggerPrint('sale', sale));
+
   const {
     workOrders,
     inventory,
@@ -114,7 +119,7 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
         `¡Cobro exitoso de la Orden #${selectedOrder.orderNumber}! Ha pasado al Historial de Entregadas.`
       );
 
-      onPrintOrder(updated);
+      handlePrintOrder(updated);
       setSelectedOrderId('');
       setCashReceived('');
     } else {
@@ -130,7 +135,7 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
       const savedSale = saveDirectSale(saleData);
       showToast(`¡Venta Directa #${savedSale.saleNumber} realizada con éxito!`);
 
-      onPrintDirectSale(savedSale);
+      handlePrintDirectSale(savedSale);
       setCartItems([]);
       setDirectClientName('');
       setCashReceived('');

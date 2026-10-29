@@ -1,19 +1,25 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { ToastProvider } from './context/ToastContext';
+import { ModalProvider } from './context/ModalContext';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AuthProvider>
-      <DataProvider>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
-      </DataProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <DataProvider>
+          <ToastProvider>
+            <ModalProvider>
+              <App />
+            </ModalProvider>
+          </ToastProvider>
+        </DataProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </StrictMode>
 );

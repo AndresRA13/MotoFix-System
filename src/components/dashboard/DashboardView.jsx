@@ -4,9 +4,13 @@ import StatusChart from './StatusChart';
 import LowStockList from './LowStockList';
 import RecentOrdersTable from './RecentOrdersTable';
 import { useData } from '../../context/DataContext';
+import { useModal } from '../../context/ModalContext';
 import { formatMoney } from '../../utils/formatters';
 
 export default function DashboardView({ onViewDetail }) {
+  const { openOrderDetail } = useModal();
+  const handleViewDetail = onViewDetail || openOrderDetail;
+
   const {
     getDashboardMetrics,
     workOrders,
@@ -92,7 +96,7 @@ export default function DashboardView({ onViewDetail }) {
         getVehicleById={getVehicleById}
         getClientById={getClientById}
         currency={currency}
-        onViewDetail={onViewDetail}
+        onViewDetail={handleViewDetail}
       />
     </section>
   );

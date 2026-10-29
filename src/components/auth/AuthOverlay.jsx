@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
 export default function AuthOverlay() {
+  const navigate = useNavigate();
   const { login, register } = useAuth();
   const { showToast } = useToast();
   const [isLoginTab, setIsLoginTab] = useState(true);
@@ -22,6 +24,7 @@ export default function AuthOverlay() {
       const res = await login(email, password);
       if (res.success) {
         showToast('¡Sesión iniciada correctamente!');
+        navigate('/dashboard');
       } else {
         showToast(res.error, 'danger');
       }
@@ -29,6 +32,7 @@ export default function AuthOverlay() {
       const res = await register(email, password);
       if (res.success) {
         showToast('¡Cuenta creada e ingreso exitoso!');
+        navigate('/dashboard');
       } else {
         showToast(res.error, 'danger');
       }

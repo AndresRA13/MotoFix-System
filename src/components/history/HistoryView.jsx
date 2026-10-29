@@ -3,9 +3,15 @@ import PlateBadge from '../common/PlateBadge';
 import StatusBadge from '../common/StatusBadge';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
+import { useModal } from '../../context/ModalContext';
 import { formatMoney, formatDate } from '../../utils/formatters';
 
 export default function HistoryView({ onViewDetail, onPrintOrder, onPrintDirectSale }) {
+  const { openOrderDetail, triggerPrint } = useModal();
+  const handleViewDetail = onViewDetail || openOrderDetail;
+  const handlePrintOrder = onPrintOrder || ((order) => triggerPrint('order', order));
+  const handlePrintDirectSale = onPrintDirectSale || ((sale) => triggerPrint('sale', sale));
+
   const {
     workOrders,
     sales,
@@ -165,14 +171,14 @@ export default function HistoryView({ onViewDetail, onPrintOrder, onPrintDirectS
                         <div className="flex items-center gap-1.5">
                           <button
                             className="w-8 h-8 rounded-lg bg-white/5 border border-dark-border text-gray-400 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center cursor-pointer"
-                            onClick={() => onViewDetail(o.id)}
+                            onClick={() => handleViewDetail(o.id)}
                             title="Ver Detalle"
                           >
                             <i className="fa-solid fa-eye"></i>
                           </button>
                           <button
                             className="w-8 h-8 rounded-lg bg-white/5 border border-dark-border text-gray-400 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center cursor-pointer"
-                            onClick={() => onPrintOrder(o)}
+                            onClick={() => handlePrintOrder(o)}
                             title="Reimprimir Ticket/Factura"
                           >
                             <i className="fa-solid fa-print"></i>
@@ -258,7 +264,7 @@ export default function HistoryView({ onViewDetail, onPrintOrder, onPrintDirectS
                         <div className="flex items-center gap-1.5">
                           <button
                             className="w-8 h-8 rounded-lg bg-white/5 border border-dark-border text-gray-400 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center cursor-pointer"
-                            onClick={() => onPrintDirectSale(s)}
+                            onClick={() => handlePrintDirectSale(s)}
                             title="Reimprimir Ticket"
                           >
                             <i className="fa-solid fa-print"></i>
