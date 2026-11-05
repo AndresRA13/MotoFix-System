@@ -4,13 +4,15 @@ import StatusBadge from '../common/StatusBadge';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 import { formatMoney, formatDate, STATUS_MAP } from '../../utils/formatters';
+import { sendOrderWhatsApp } from '../../utils/whatsapp';
 
 export default function OrderDetailModal({ isOpen, onClose, orderId, onPrintOrder }) {
   const {
     workOrders,
     getClientById,
     getVehicleById,
-    updateOrderStatus,
+    cancelWorkOrder,
+    deleteWorkOrder,
     settings
   } = useData();
   const { showToast } = useToast();
@@ -24,9 +26,41 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, onPrintOrde
   const vehicle = getVehicleById(order.vehicleId) || {};
   const currency = settings?.currency || '$';
 
-  const handleChangeStatus = (newStatus) => {
-    updateOrderStatus(order.id, newStatus);
-    showToast(`Estado actualizado a: ${STATUS_MAP[newStatus]?.label || newStatus}`);
+  const handleNotifyWhatsApp = () => {
+    const ok = sendOrderWhatsApp({
+      order,
+      client,
+      vehicle,
+      settings,
+      onNoPhone: () => showToast('⚠️ El cliente no tiene un teléfono registrado')
+    });
+    if (ok) {
+      showToast(`Abriendo WhatsApp para notificar a ${client.name || 'cliente'}`);
+    }
+  };
+
+  const handleCancelOrder = () => {
+    const confirmCancel = window.confirm(
+      `¿Estás seguro de anular la Orden #${order.orderNumber}?\n\n- Se anulará el cobro y se restará de los ingresos.\n- Los repuestos utilizados serán devueltos automáticamente al inventario.`
+    );
+    if (!confirmCancel) return;
+
+    cancelWorkOrder(order.id);
+    showToast(
+      `Orden #${order.orderNumber} anulada. Fondos deducidos y repuestos devueltos al stock.`,
+      'info'
+    );
+    onClose();
+  };
+
+  const handleDeleteActiveOrder = () => {
+    const confirmDelete = window.confirm(
+      `¿Deseas eliminar definitivamente la Orden #${order.orderNumber} del taller?\n\nEsta acción quitará la orden del listado de órdenes activas.`
+    );
+    if (!confirmDelete) return;
+
+    deleteWorkOrder(order.id);
+    showToast(`Orden #${order.orderNumber} eliminada del listado activo`, 'info');
     onClose();
   };
 
@@ -97,48 +131,6 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, onPrintOrde
           </div>
 
           <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-2.5">
-            CAMBIAR ESTADO DE LA ÓRDEN:
-          </h4>
-          <div className="flex gap-2 flex-wrap mb-5">
-            <button
-              className="px-3 py-1.5 rounded-md bg-blue-500/15 border border-blue-500/30 text-blue-400 hover:bg-blue-500/25 text-xs font-bold transition-all cursor-pointer"
-              onClick={() => handleChangeStatus('recibida')}
-            >
-              Recibida
-            </button>
-            <button
-              className="px-3 py-1.5 rounded-md bg-purple-500/15 border border-purple-500/30 text-purple-400 hover:bg-purple-500/25 text-xs font-bold transition-all cursor-pointer"
-              onClick={() => handleChangeStatus('diagnostico')}
-            >
-              Diagnóstico
-            </button>
-            <button
-              className="px-3 py-1.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 text-xs font-bold transition-all cursor-pointer"
-              onClick={() => handleChangeStatus('reparacion')}
-            >
-              En Reparación
-            </button>
-            <button
-              className="px-3 py-1.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 text-xs font-bold transition-all cursor-pointer"
-              onClick={() => handleChangeStatus('lista')}
-            >
-              Lista para Entrega
-            </button>
-            <button
-              className="px-3 py-1.5 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 text-xs font-bold transition-all cursor-pointer"
-              onClick={() => handleChangeStatus('entregada')}
-            >
-              Entregada y Cobrada
-            </button>
-            <button
-              className="px-3 py-1.5 rounded-md bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 text-xs font-bold transition-all cursor-pointer"
-              onClick={() => handleChangeStatus('cancelada')}
-            >
-              Cancelar
-            </button>
-          </div>
-
-          <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-2.5">
             DETALLE DE REPUESTOS Y MANO DE OBRA:
           </h4>
           <div className="bg-black/30 rounded-lg border border-dark-border overflow-hidden mb-4">
@@ -180,19 +172,59 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, onPrintOrde
           </div>
         </div>
 
-        <div className="p-4 px-6 border-t border-dark-border flex items-center justify-end gap-3 bg-black/20">
-          <button
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-dark-border text-gray-200 hover:bg-white/10 text-sm font-semibold transition-all cursor-pointer"
-            onClick={() => onPrintOrder(order)}
-          >
-            <i className="fa-solid fa-print text-amber-500"></i> Imprimir Ticket
-          </button>
-          <button
-            className="px-5 py-2 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold text-sm shadow-md hover:brightness-110 transition-all cursor-pointer"
-            onClick={onClose}
-          >
-            Cerrar
-          </button>
+        <div className="p-4 px-6 border-t border-dark-border flex items-center justify-between gap-3 bg-black/20 flex-wrap">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+              onClick={handleNotifyWhatsApp}
+              title={`Notificar estado a ${client.name || 'el cliente'} por WhatsApp`}
+            >
+              <i className="fa-brands fa-whatsapp text-base"></i> Notificar WhatsApp
+            </button>
+
+            {/* Botón de Anular Orden (exclusivo para órdenes entregadas y cobradas) */}
+            {order.status === 'entregada' && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+                onClick={handleCancelOrder}
+                title="Anular orden cobrada: cancela el cobro y devuelve los repuestos al inventario"
+              >
+                <i className="fa-solid fa-ban"></i> Anular Orden
+              </button>
+            )}
+
+            {/* Botón de Eliminar Orden (exclusivo para órdenes que NO han sido entregadas y cobradas) */}
+            {order.status !== 'entregada' && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+                onClick={handleDeleteActiveOrder}
+                title="Eliminar esta orden del listado de órdenes activas"
+              >
+                <i className="fa-solid fa-trash-can"></i> Eliminar Orden
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {order.status === 'entregada' && onPrintOrder && (
+              <button
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500 hover:text-black text-xs sm:text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
+                onClick={() => onPrintOrder(order)}
+                title="Imprimir ticket / factura de entrega"
+              >
+                <i className="fa-solid fa-print"></i> Imprimir Ticket
+              </button>
+            )}
+            <button
+              className="px-5 py-2 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold text-xs sm:text-sm shadow-md hover:brightness-110 transition-all cursor-pointer"
+              onClick={onClose}
+            >
+              Cerrar
+            </button>
+          </div>
         </div>
       </div>
     </div>

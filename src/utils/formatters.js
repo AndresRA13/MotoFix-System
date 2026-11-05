@@ -21,6 +21,6 @@ export const STATUS_MAP = {
   reparacion: { label: 'En Reparación', class: 'status-reparacion', icon: 'fa-screwdriver-wrench' },
   lista: { label: 'Lista para Entrega', class: 'status-lista', icon: 'fa-circle-check' },
   entregada: { label: 'Entregada y Cobrada', class: 'status-entregada', icon: 'fa-flag-checkered' },
-  cancelada: { label: 'Cancelada', class: 'status-cancelada', icon: 'fa-ban' }
+  cancelada: { label: 'Anulada', class: 'status-cancelada', icon: 'fa-ban' }
 };
 

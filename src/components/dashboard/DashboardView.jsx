@@ -26,12 +26,12 @@ export default function DashboardView({ onViewDetail }) {
 
   // Last 5 delivered + paid orders for activity feed
   const recentActivity = useMemo(() => {
-    const delivered = workOrders
-      .filter((o) => o.status === 'entregada' && o.isPaid)
+    const delivered = (workOrders || [])
+      .filter((o) => o && o.status === 'entregada' && o.isPaid)
       .sort((a, b) => new Date(b.deliveryDate || b.entryDate) - new Date(a.deliveryDate || a.entryDate))
       .slice(0, 4);
     const directSales = (sales || [])
-      .filter((s) => !s.isCancelled)
+      .filter((s) => s && !s.isCancelled)
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 3);
     return { delivered, directSales };
@@ -54,7 +54,7 @@ export default function DashboardView({ onViewDetail }) {
         <MetricCard
           label="Ingresos Hoy"
           value={formatMoney(metrics.todayRevenue, currency)}
-          subLabel={`${metrics.todayOrdersCount} cobro${metrics.todayOrdersCount !== 1 ? 's' : ''} realizados`}
+          subLabel={`${metrics.todayOrdersCount} cobro${metrics.todayOrdersCount !== 1 ? 's' : ''} (Órdenes: ${formatMoney(metrics.todayOrderRevenue, currency)} · Mostrador: ${formatMoney(metrics.todaySalesRevenue, currency)})`}
           icon="fa-sun"
           accent="#10b981"
           iconBg="rgba(16,185,129,0.15)"

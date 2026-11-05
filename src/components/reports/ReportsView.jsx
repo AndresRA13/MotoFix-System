@@ -1,14 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
+import { useToast } from '../../context/ToastContext';
 import { formatMoney, formatDate } from '../../utils/formatters';
+import { exportReportsToCSV, printReportPDF } from '../../utils/exporter';
 
 /* ─── Preset ranges ─────────────────────────────────────────────────── */
 const PRESETS = [
-  { label: 'Hoy',          icon: 'fa-sun',          days: 0 },
-  { label: 'Ayer',         icon: 'fa-rotate-left',  yesterday: true },
+  { label: 'Hoy',          icon: 'fa-sun',           days: 0 },
+  { label: 'Ayer',         icon: 'fa-rotate-left',   yesterday: true },
   { label: '7 días',       icon: 'fa-calendar-week', days: 7 },
-  { label: '30 días',      icon: 'fa-calendar',     days: 30 },
-  { label: 'Este mes',     icon: 'fa-calendar-days', thisMonth: true },
+  { label: '15 días',      icon: 'fa-calendar',      days: 15 },
+  { label: '30 días',      icon: 'fa-calendar-days', days: 30 },
+  { label: 'Este mes',     icon: 'fa-calendar-check', thisMonth: true },
   { label: 'Mes anterior', icon: 'fa-calendar-xmark', lastMonth: true },
 ];
 
@@ -105,6 +108,7 @@ const payIcon = (m = '') => {
 ═══════════════════════════════════════════════════════════════════════ */
 export default function ReportsView() {
   const { workOrders, sales, getClientById, getVehicleById, settings } = useData();
+  const { showToast } = useToast();
   const currency = settings?.currency || '$';
 
   const todayStr = toInput(new Date());
@@ -126,7 +130,7 @@ export default function ReportsView() {
     const ok   = (s) => s && new Date(s) >= from && new Date(s) <= to;
 
     const periodOrders = workOrders.filter(
-      (o) => (o.isPaid || o.status === 'entregada') && ok(o.deliveryDate || o.entryDate)
+      (o) => (o.isPaid || o.status === 'entregada') && o.status !== 'cancelada' && ok(o.deliveryDate || o.entryDate)
     );
     const periodSales = (sales || []).filter(
       (s) => !s.isCancelled && s.status !== 'anulada' && ok(s.date)
@@ -174,6 +178,45 @@ export default function ReportsView() {
 
   const totalTx = stats.periodOrders.length + stats.periodSales.length;
 
+  const periodLabel = preset >= 0 && preset < PRESETS.length
+    ? PRESETS[preset].label
+    : `${fromDate} al ${toDate}`;
+
+  const handleExportExcel = () => {
+    if (totalTx === 0) {
+      showToast('No hay transacciones en este período para exportar');
+      return;
+    }
+    exportReportsToCSV({
+      stats,
+      fromDate,
+      toDate,
+      periodLabel,
+      currency,
+      settings,
+      getClientById,
+      getVehicleById
+    });
+    showToast(`Reporte (${periodLabel}) exportado a Excel con éxito`);
+  };
+
+  const handlePrint = () => {
+    if (totalTx === 0) {
+      showToast('No hay transacciones en este período para generar PDF');
+      return;
+    }
+    printReportPDF({
+      stats,
+      fromDate,
+      toDate,
+      periodLabel,
+      settings,
+      getClientById,
+      getVehicleById
+    });
+    showToast(`Generando PDF para: ${periodLabel}`);
+  };
+
   return (
     <section className="animate-in fade-in duration-300 space-y-5 pb-8">
 
@@ -181,14 +224,39 @@ export default function ReportsView() {
       <div className="bg-dark-card border border-dark-border rounded-2xl overflow-hidden">
         {/* Preset row */}
         <div className="p-4 border-b border-dark-border">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Acceso rápido</p>
-            {totalTx > 0 && (
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold">
-                <i className="fa-solid fa-check-circle"></i>
-                {totalTx} registro{totalTx !== 1 ? 's' : ''}
-              </span>
-            )}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3">
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Acceso rápido</p>
+              {totalTx > 0 && (
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold">
+                  <i className="fa-solid fa-check-circle"></i>
+                  {totalTx} registro{totalTx !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+
+            {/* Botones de Exportación / Impresión */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+                onClick={handleExportExcel}
+                title="Exportar reporte detallado a Excel (CSV)"
+              >
+                <i className="fa-solid fa-file-excel text-xs"></i>
+                <span>Exportar Excel</span>
+              </button>
+
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 text-xs font-bold transition-all cursor-pointer active:scale-95"
+                onClick={handlePrint}
+                title="Imprimir o Guardar como PDF"
+              >
+                <i className="fa-solid fa-print text-xs text-amber-500"></i>
+                <span className="hidden sm:inline">Imprimir / PDF</span>
+              </button>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {PRESETS.map((p, idx) => (

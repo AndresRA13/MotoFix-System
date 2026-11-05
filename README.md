@@ -44,12 +44,22 @@ Construida con **React 19**, **Vite**, **Tailwind CSS v4** y sincronización rea
 - **Rankings Top 5**:
   - 🥇 **Top Repuestos Más Vendidos**: Gráfico de barras porcentuales con unidades despachadas.
   - 🥇 **Top Servicios Más Solicitados**: Servicios técnicos con mayor demanda.
-- **Auditoría Detallada de Transacciones**: Listado completo de órdenes y ventas del período con cliente, placa, ítems y monto recaudado.
+- **Exportación & Auditoría**:
+  - 📥 **Exportar a Excel (CSV)**: Descarga directa del balance completo con fórmulas de subtotales compatibles con Microsoft Excel.
+  - 🖨️ **Impresión / Exportar a PDF**: Generación de informe imprimible con diseño ejecutivo.
+  - Auditoría detallada de órdenes y ventas del período con cliente, placa, ítems y recaudo.
 
 ---
 
 ### 3. 🔧 Gestión de Órdenes de Trabajo (`/orders`)
 
+- **Notificaciones por WhatsApp al Cliente**:
+  - 📲 **Botón de WhatsApp en Cada Orden**: Notifica con 1 clic al cliente sobre el estado de su vehículo sin necesidad de agregarlo a contactos.
+  - 💬 **Mensajes Dinámicos e Inteligentes**:
+    - **Lista para Entrega**: Avisa que la moto está lista, informa el total exacto a pagar e invita a recogerla.
+    - **En Reparación / Diagnóstico**: Notifica el avance técnico y presupuesto estimado.
+    - **Recepción**: Confirma el ingreso del vehículo y el número de orden de trabajo asignado.
+  - Alerta interactiva al cambiar el estado a "Lista para Entrega" sugiriendo enviar el WhatsApp de inmediato.
 - **Control de Flujo de Taller**:
   - Estados: `Recibida` ➔ `En Diagnóstico` ➔ `En Reparación` ➔ `Lista para Entrega` ➔ `Entregada`.
   - **Cambio de Estado Rápido**: Selector en línea directo en cada fila de la tabla sin necesidad de abrir modales.
@@ -81,7 +91,7 @@ Construida con **React 19**, **Vite**, **Tailwind CSS v4** y sincronización rea
 
 ### 5. 📦 Historial de Transacciones (`/history`)
 
-- **Pestaña de Órdenes Entregadas & Cobradas**: Consulta histórica con detalle de cliente, placa, fecha, total y reimpresión de comprobante.
+- **Pestaña de Órdenes Entregadas & Cobradas**: Consulta histórica con detalle de cliente, placa, fecha, total, botón de contacto post-venta vía WhatsApp y reimpresión de comprobante.
 - **Pestaña de Ventas Directas**: Registro de comprobantes de mostrador con opción de **Anulación de Venta** (reintegra automáticamente el stock de los repuestos y ajusta las finanzas del taller).
 
 ---
@@ -108,9 +118,15 @@ Construida con **React 19**, **Vite**, **Tailwind CSS v4** y sincronización rea
 
 ---
 
-### 9. ⚙️ Configuración & Respaldos (`/settings`)
+### 9. ⚙️ Configuración, Respaldos & Exportaciones (`/settings`)
 
 - Configuración de datos del negocio (Razón Social / Nombre del Taller, NIT / RUT, Teléfono, Dirección, Moneda y Mensaje de pie de ticket).
+- **Centro de Exportación a Excel (CSV)**: Panel centralizado para descargar informes y bases de datos con codificación UTF-8 compatible con Microsoft Excel:
+  - 📦 **Inventario de Repuestos**: Stock actual, mínimo, costo, venta y valoración de almacén.
+  - 🛠️ **Tarifario de Servicios**: Mano de obra estándar y precios.
+  - 🔧 **Todas las Órdenes de Trabajo**: Registro de órdenes activas y finalizadas con clientes, placas y presupuestos.
+  - 🛒 **Ventas de Mostrador**: Historial de comprobantes de venta directa.
+  - 👥 **Directorio de Clientes**: Base de datos de clientes, teléfonos, emails y motos vinculadas.
 - **Copias de Seguridad (Backup & Restore)**:
   - Exportación completa de la base de datos a formato JSON.
   - Restauración e importación de copias de seguridad desde archivo JSON.

@@ -1,9 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
+import {
+  exportInventoryToCSV,
+  exportServicesToCSV,
+  exportAllOrdersToCSV,
+  exportHistoryToCSV,
+  exportClientsToCSV
+} from '../../utils/exporter';
 
 export default function SettingsView() {
-  const { settings, saveSettings, resetToDemo, exportJSON, importJSON } = useData();
+  const {
+    settings,
+    saveSettings,
+    resetToDemo,
+    exportJSON,
+    importJSON,
+    inventory,
+    services,
+    workOrders,
+    sales,
+    clients,
+    vehicles,
+    getVehicleById,
+    getClientById
+  } = useData();
   const { showToast } = useToast();
 
   const [name, setName] = useState('');
@@ -78,6 +99,52 @@ export default function SettingsView() {
       resetToDemo();
       showToast('Datos demo cargados con éxito');
     }
+  };
+
+  /* ── Exportaciones a Excel ── */
+  const handleExportInventory = () => {
+    if (!inventory || inventory.length === 0) {
+      showToast('No hay repuestos registrados en el inventario');
+      return;
+    }
+    exportInventoryToCSV(inventory, currency);
+    showToast('Inventario exportado a Excel con éxito');
+  };
+
+  const handleExportServices = () => {
+    if (!services || services.length === 0) {
+      showToast('No hay servicios registrados en el tarifario');
+      return;
+    }
+    exportServicesToCSV(services, currency);
+    showToast('Tarifario de servicios exportado a Excel');
+  };
+
+  const handleExportOrders = () => {
+    if (!workOrders || workOrders.length === 0) {
+      showToast('No hay órdenes registradas para exportar');
+      return;
+    }
+    exportAllOrdersToCSV(workOrders, getVehicleById, getClientById);
+    showToast('Órdenes de trabajo exportadas a Excel');
+  };
+
+  const handleExportSales = () => {
+    if (!sales || sales.length === 0) {
+      showToast('No hay ventas directas registradas para exportar');
+      return;
+    }
+    exportHistoryToCSV([], sales, getVehicleById, getClientById, 'direct');
+    showToast('Ventas directas exportadas a Excel');
+  };
+
+  const handleExportClients = () => {
+    if (!clients || clients.length === 0) {
+      showToast('No hay clientes registrados para exportar');
+      return;
+    }
+    exportClientsToCSV(clients, vehicles);
+    showToast('Directorio de clientes exportado a Excel');
   };
 
   return (
@@ -211,6 +278,161 @@ export default function SettingsView() {
               onClick={handleResetDemo}
             >
               <i className="fa-solid fa-rotate-left"></i> Cargar Datos Demo de Prueba
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Centro de Exportación a Excel (CSV) ── */}
+      <div className="mt-6 bg-dark-card border border-dark-border rounded-xl p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-dark-border">
+          <div>
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <i className="fa-solid fa-file-excel text-emerald-400"></i> Centro de Exportación a Excel (CSV)
+            </h3>
+            <p className="text-xs text-gray-400 mt-1">
+              Descarga tus catálogos, registros contables y bases de datos con codificación UTF-8 compatible con Microsoft Excel.
+            </p>
+          </div>
+          <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 rounded-full self-start sm:self-auto flex items-center gap-1.5 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Formatos Excel (.csv)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {/* Card 1: Inventario */}
+          <div className="bg-white/[0.02] border border-white/5 hover:border-amber-500/30 rounded-xl p-4 flex flex-col justify-between gap-3 transition-all group">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-400">
+                    <i className="fa-solid fa-boxes-stacked text-xs"></i>
+                  </div>
+                  <h4 className="text-sm font-bold text-white">Inventario de Repuestos</h4>
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                  {inventory?.length || 0} ítems
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Código, descripción, categoría, stock actual, stock mínimo, precio costo, precio venta y valoración de almacén.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportInventory}
+              className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              <i className="fa-solid fa-file-excel"></i> Descargar Inventario
+            </button>
+          </div>
+
+          {/* Card 2: Mano de Obra */}
+          <div className="bg-white/[0.02] border border-white/5 hover:border-amber-500/30 rounded-xl p-4 flex flex-col justify-between gap-3 transition-all group">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <i className="fa-solid fa-hand-holding-hand text-xs"></i>
+                  </div>
+                  <h4 className="text-sm font-bold text-white">Tarifario de Servicios</h4>
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                  {services?.length || 0} servicios
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Catálogo de servicios mecánicos, mano de obra estándar y tarifas registradas para el taller.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportServices}
+              className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              <i className="fa-solid fa-file-excel"></i> Descargar Tarifario
+            </button>
+          </div>
+
+          {/* Card 3: Órdenes de Trabajo */}
+          <div className="bg-white/[0.02] border border-white/5 hover:border-amber-500/30 rounded-xl p-4 flex flex-col justify-between gap-3 transition-all group">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                    <i className="fa-solid fa-wrench text-xs"></i>
+                  </div>
+                  <h4 className="text-sm font-bold text-white">Todas las Órdenes</h4>
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                  {workOrders?.length || 0} órdenes
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Órdenes activas, en proceso y entregadas, con cliente, placa, mecánico, fecha, estado y presupuesto.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportOrders}
+              className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              <i className="fa-solid fa-file-excel"></i> Descargar Órdenes
+            </button>
+          </div>
+
+          {/* Card 4: Ventas Directas */}
+          <div className="bg-white/[0.02] border border-white/5 hover:border-amber-500/30 rounded-xl p-4 flex flex-col justify-between gap-3 transition-all group">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                    <i className="fa-solid fa-cart-shopping text-xs"></i>
+                  </div>
+                  <h4 className="text-sm font-bold text-white">Ventas de Mostrador</h4>
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                  {sales?.length || 0} ventas
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Historial de comprobantes de ventas rápidas de repuestos despachados en mostrador con método de pago y totales.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportSales}
+              className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              <i className="fa-solid fa-file-excel"></i> Descargar Ventas Mostrador
+            </button>
+          </div>
+
+          {/* Card 5: Clientes & Motos */}
+          <div className="bg-white/[0.02] border border-white/5 hover:border-amber-500/30 rounded-xl p-4 flex flex-col justify-between gap-3 transition-all group">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <i className="fa-solid fa-address-book text-xs"></i>
+                  </div>
+                  <h4 className="text-sm font-bold text-white">Directorio de Clientes</h4>
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                  {clients?.length || 0} clientes
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Base de datos de propietarios registrados, teléfonos de contacto, emails y placas de motos vinculadas.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportClients}
+              className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              <i className="fa-solid fa-file-excel"></i> Descargar Clientes
             </button>
           </div>
         </div>

@@ -27,7 +27,7 @@ const STATUS_CONFIG = {
     icon: 'fa-flag-checkered'
   },
   cancelada: {
-    label: 'Cancelada',
+    label: 'Anulada',
     classes: 'bg-red-500/15 text-red-400 border-red-500/30',
     icon: 'fa-ban'
   }

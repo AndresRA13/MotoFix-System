@@ -119,13 +119,16 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
     if (posMode === 'order') {
       if (!selectedOrder) return;
 
+      const deliveryDate = new Date().toISOString();
       const updated = {
         ...selectedOrder,
         paymentMethod,
-        deliveryDate: new Date().toISOString()
+        deliveryDate,
+        status: 'entregada',
+        isPaid: true
       };
 
-      updateOrderStatus(updated.id, 'entregada');
+      updateOrderStatus(selectedOrder.id, 'entregada', { paymentMethod, deliveryDate });
       showToast(
         `¡Cobro exitoso de la Orden #${selectedOrder.orderNumber}! Ha pasado al Historial de Entregadas.`
       );

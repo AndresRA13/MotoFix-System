@@ -14,8 +14,15 @@ export function DataProvider({ children }) {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
+        const cleanArray = (arr) => (Array.isArray(arr) ? arr.filter(Boolean) : []);
         if (!parsed.mechanics || parsed.mechanics.length === 0) parsed.mechanics = DEFAULT_MECHANICS;
         if (!parsed.sales) parsed.sales = [];
+        parsed.workOrders = cleanArray(parsed.workOrders);
+        parsed.inventory = cleanArray(parsed.inventory);
+        parsed.services = cleanArray(parsed.services);
+        parsed.clients = cleanArray(parsed.clients);
+        parsed.vehicles = cleanArray(parsed.vehicles);
+        parsed.sales = cleanArray(parsed.sales);
         return parsed;
       }
     } catch (e) {
@@ -61,15 +68,16 @@ export function DataProvider({ children }) {
         if (val) {
           isSyncingFromRemoteRef.current = true;
           setData((prev) => {
+            const cleanArray = (arr) => (Array.isArray(arr) ? arr.filter(Boolean) : []);
             const merged = {
               settings: val.settings || prev.settings || DEFAULT_SETTINGS,
-              mechanics: val.mechanics || prev.mechanics || DEFAULT_MECHANICS,
-              inventory: val.inventory || prev.inventory || [],
-              services: val.services || prev.services || [],
-              clients: val.clients || prev.clients || [],
-              vehicles: val.vehicles || prev.vehicles || [],
-              workOrders: val.workOrders || prev.workOrders || [],
-              sales: val.sales || prev.sales || []
+              mechanics: cleanArray(val.mechanics).length > 0 ? cleanArray(val.mechanics) : (prev.mechanics || DEFAULT_MECHANICS),
+              inventory: cleanArray(val.inventory || prev.inventory),
+              services: cleanArray(val.services || prev.services),
+              clients: cleanArray(val.clients || prev.clients),
+              vehicles: cleanArray(val.vehicles || prev.vehicles),
+              workOrders: cleanArray(val.workOrders || prev.workOrders),
+              sales: cleanArray(val.sales || prev.sales)
             };
             try {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
@@ -311,7 +319,10 @@ export function DataProvider({ children }) {
     [data, commitStore]
   );
 
-  const getWorkOrders = useCallback(() => data.workOrders || [], [data.workOrders]);
+  const getWorkOrders = useCallback(
+    () => (data.workOrders || []).filter(Boolean),
+    [data.workOrders]
+  );
 
   const getNextOrderNumber = useCallback(() => {
     const orders = data.workOrders || [];
@@ -349,35 +360,164 @@ export function DataProvider({ children }) {
   );
 
   const updateOrderStatus = useCallback(
-    (orderId, newStatus) => {
-      const workOrders = [...(data.workOrders || [])];
-      const inventory = [...(data.inventory || [])];
-      const order = workOrders.find((o) => o.id === orderId);
+    (orderId, newStatus, additionalData = {}) => {
+      let updatedOrder = null;
+      setData((prevData) => {
+        const workOrders = [...(prevData.workOrders || [])];
+        const inventory = [...(prevData.inventory || [])];
+        const idx = workOrders.findIndex((o) => o.id === orderId);
 
-      if (order) {
-        order.status = newStatus;
-        if (newStatus === 'entregada' && !order.isPaid) {
-          order.isPaid = true;
-          // Deduct parts stock
-          if (order.items) {
+        if (idx !== -1) {
+          const currentOrder = workOrders[idx];
+          const isTransitioningToEntregada = newStatus === 'entregada' && currentOrder.status !== 'entregada' && !currentOrder.isPaid;
+
+          const order = { ...currentOrder, status: newStatus };
+          if (newStatus === 'entregada') {
+            order.isPaid = true;
+            order.deliveryDate = additionalData.deliveryDate || order.deliveryDate || new Date().toISOString();
+            if (additionalData.paymentMethod) {
+              order.paymentMethod = additionalData.paymentMethod;
+            }
+
+            // Deduct parts stock ONLY ONCE during transition to entregada
+            if (isTransitioningToEntregada && order.items) {
+              order.items.forEach((item) => {
+                if (item.type === 'part') {
+                  const partIdx = inventory.findIndex((p) => p.id === item.id);
+                  if (partIdx !== -1) {
+                    const deductQty = Number(item.qty) || 1;
+                    inventory[partIdx] = {
+                      ...inventory[partIdx],
+                      stock: Math.max(0, (Number(inventory[partIdx].stock) || 0) - deductQty)
+                    };
+                  }
+                }
+              });
+            }
+          }
+          workOrders[idx] = order;
+          updatedOrder = order;
+
+          const nextData = { ...prevData, workOrders, inventory };
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(nextData));
+          } catch (e) {
+            console.error('Error saving to localStorage:', e);
+          }
+
+          if (db && user && !isSyncingFromRemoteRef.current) {
+            try {
+              set(ref(db, 'taller_data'), nextData).catch((err) => {
+                console.warn('Firebase error on updateOrderStatus:', err);
+              });
+            } catch (err) {}
+          }
+
+          return nextData;
+        }
+        return prevData;
+      });
+      return updatedOrder;
+    },
+    [user]
+  );
+
+  const cancelWorkOrder = useCallback(
+    (orderId) => {
+      let cancelledOrder = null;
+      setData((prevData) => {
+        const workOrders = [...(prevData.workOrders || [])];
+        const inventory = [...(prevData.inventory || [])];
+        const idx = workOrders.findIndex((o) => o.id === orderId);
+
+        if (idx !== -1 && workOrders[idx].status !== 'cancelada') {
+          const currentOrder = workOrders[idx];
+          const wasDeliveredOrPaid = currentOrder.status === 'entregada' || currentOrder.isPaid;
+          const order = { ...currentOrder, status: 'cancelada', isPaid: false };
+
+          // If it was delivered/paid, return parts back to inventory exactly once
+          if (wasDeliveredOrPaid && order.items) {
             order.items.forEach((item) => {
               if (item.type === 'part') {
-                const part = inventory.find((p) => p.id === item.id);
-                if (part) {
-                  part.stock = Math.max(0, part.stock - (item.qty || 1));
+                const partIdx = inventory.findIndex((p) => p.id === item.id);
+                if (partIdx !== -1) {
+                  const restoreQty = Number(item.qty) || 1;
+                  inventory[partIdx] = {
+                    ...inventory[partIdx],
+                    stock: (Number(inventory[partIdx].stock) || 0) + restoreQty
+                  };
                 }
               }
             });
           }
+
+          workOrders[idx] = order;
+          cancelledOrder = order;
+
+          const nextData = { ...prevData, workOrders, inventory };
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(nextData));
+          } catch (e) {
+            console.error('Error saving to localStorage:', e);
+          }
+
+          if (db && user && !isSyncingFromRemoteRef.current) {
+            try {
+              set(ref(db, 'taller_data'), nextData).catch((err) => {
+                console.warn('Firebase error on cancelWorkOrder:', err);
+              });
+            } catch (err) {}
+          }
+
+          return nextData;
         }
-        commitStore({ ...data, workOrders, inventory });
-      }
-      return order;
+        return prevData;
+      });
+      return cancelledOrder;
     },
-    [data, commitStore]
+    [user]
   );
 
-  const getDirectSales = useCallback(() => data.sales || [], [data.sales]);
+  const deleteWorkOrder = useCallback(
+    (orderId) => {
+      let deleted = false;
+      setData((prevData) => {
+        const workOrders = (prevData.workOrders || []).filter((o) => {
+          if (o && o.id === orderId) {
+            deleted = true;
+            return false;
+          }
+          return Boolean(o);
+        });
+
+        if (!deleted) return prevData;
+
+        const nextData = { ...prevData, workOrders };
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(nextData));
+        } catch (e) {
+          console.error('Error saving to localStorage on deleteWorkOrder:', e);
+        }
+
+        if (db && user && !isSyncingFromRemoteRef.current) {
+          try {
+            set(ref(db, 'taller_data'), nextData).catch((err) => {
+              console.warn('Firebase error on deleteWorkOrder:', err);
+            });
+          } catch (err) {}
+        }
+
+        return nextData;
+      });
+      return deleted;
+    },
+    [user]
+  );
+
+  const getDirectSales = useCallback(
+    () => (data.sales || []).filter(Boolean),
+    [data.sales]
+  );
 
   const saveDirectSale = useCallback(
     (saleData) => {
@@ -444,9 +584,9 @@ export function DataProvider({ children }) {
   );
 
   const getDashboardMetrics = useCallback(() => {
-    const orders = data.workOrders || [];
-    const inventory = data.inventory || [];
-    const sales = data.sales || [];
+    const orders = (data.workOrders || []).filter(Boolean);
+    const inventory = (data.inventory || []).filter(Boolean);
+    const sales = (data.sales || []).filter(Boolean);
 
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -454,25 +594,47 @@ export function DataProvider({ children }) {
     weekStart.setDate(todayStart.getDate() - 6); // last 7 days
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const isToday = (dateStr) => dateStr && new Date(dateStr) >= todayStart;
-    const isThisWeek = (dateStr) => dateStr && new Date(dateStr) >= weekStart;
-    const isThisMonth = (dateStr) => dateStr && new Date(dateStr) >= monthStart;
+    // Helpers for period matching (local calendar boundaries)
+    const getOrderEffectiveDate = (o) => o?.deliveryDate || o?.entryDate;
+
+    const isToday = (dateStr) => {
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return false;
+      return (
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() === now.getMonth() &&
+        d.getDate() === now.getDate()
+      );
+    };
+
+    const isThisWeek = (dateStr) => {
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      return !isNaN(d.getTime()) && d >= weekStart;
+    };
+
+    const isThisMonth = (dateStr) => {
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      return !isNaN(d.getTime()) && d >= monthStart;
+    };
 
     // Active / status counts
-    const activeOrders = orders.filter((o) => o.status !== 'entregada' && o.status !== 'cancelada');
-    const readyOrders = orders.filter((o) => o.status === 'lista');
+    const activeOrders = orders.filter((o) => o && o.status !== 'entregada' && o.status !== 'cancelada');
+    const readyOrders = orders.filter((o) => o && o.status === 'lista');
 
-    // Revenue from paid work orders
-    const paidOrders = orders.filter((o) => o.isPaid || o.status === 'entregada');
+    // Revenue from paid / delivered work orders (exclude cancelled)
+    const paidOrders = orders.filter((o) => o && (o.isPaid || o.status === 'entregada') && o.status !== 'cancelada');
     const workOrderRevenue = paidOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
     // Revenue from direct sales (non-cancelled)
-    const activeSales = sales.filter((s) => !s.isCancelled && s.status !== 'anulada');
+    const activeSales = sales.filter((s) => s && !s.isCancelled && s.status !== 'anulada');
     const directSalesRevenue = activeSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
     const totalRevenue = workOrderRevenue + directSalesRevenue;
 
-    // TODAY metrics
-    const todayOrders = paidOrders.filter((o) => isToday(o.deliveryDate || o.entryDate));
+    // TODAY metrics: Work Orders + Direct Sales
+    const todayOrders = paidOrders.filter((o) => isToday(getOrderEffectiveDate(o)));
     const todayOrderRevenue = todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
     const todaySales = activeSales.filter((s) => isToday(s.date));
     const todaySalesRevenue = todaySales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
@@ -480,35 +642,35 @@ export function DataProvider({ children }) {
     const todayOrdersCount = todayOrders.length + todaySales.length;
 
     // WEEK metrics
-    const weekOrders = paidOrders.filter((o) => isThisWeek(o.deliveryDate || o.entryDate));
+    const weekOrders = paidOrders.filter((o) => isThisWeek(getOrderEffectiveDate(o)));
     const weekOrderRevenue = weekOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
     const weekSales = activeSales.filter((s) => isThisWeek(s.date));
     const weekSalesRevenue = weekSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
     const weekRevenue = weekOrderRevenue + weekSalesRevenue;
 
     // MONTH metrics
-    const monthOrders = paidOrders.filter((o) => isThisMonth(o.deliveryDate || o.entryDate));
+    const monthOrders = paidOrders.filter((o) => isThisMonth(getOrderEffectiveDate(o)));
     const monthOrderRevenue = monthOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
     const monthSales = activeSales.filter((s) => isThisMonth(s.date));
     const monthSalesRevenue = monthSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
     const monthRevenue = monthOrderRevenue + monthSalesRevenue;
 
     // Inventory
-    const lowStockParts = inventory.filter((p) => p.stock <= (p.minStock || 0));
+    const lowStockParts = inventory.filter((p) => p && (p.stock || 0) <= (p.minStock || 0));
 
     // Status breakdown for chart
     const statusCounts = {
-      recibida: orders.filter((o) => o.status === 'recibida').length,
-      diagnostico: orders.filter((o) => o.status === 'diagnostico').length,
-      reparacion: orders.filter((o) => o.status === 'reparacion').length,
-      lista: orders.filter((o) => o.status === 'lista').length,
-      entregada: orders.filter((o) => o.status === 'entregada').length,
+      recibida: orders.filter((o) => o?.status === 'recibida').length,
+      diagnostico: orders.filter((o) => o?.status === 'diagnostico').length,
+      reparacion: orders.filter((o) => o?.status === 'reparacion').length,
+      lista: orders.filter((o) => o?.status === 'lista').length,
+      entregada: orders.filter((o) => o?.status === 'entregada').length,
     };
 
     // Top mechanic by completed orders this month
     const mechanicStats = {};
     monthOrders.forEach((o) => {
-      if (o.mechanicName) {
+      if (o?.mechanicName) {
         mechanicStats[o.mechanicName] = (mechanicStats[o.mechanicName] || 0) + 1;
       }
     });
@@ -588,6 +750,8 @@ export function DataProvider({ children }) {
         workOrders: getWorkOrders(),
         saveWorkOrder,
         updateOrderStatus,
+        cancelWorkOrder,
+        deleteWorkOrder,
         sales: getDirectSales(),
         saveDirectSale,
         cancelDirectSale,
