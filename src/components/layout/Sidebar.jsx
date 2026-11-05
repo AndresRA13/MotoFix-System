@@ -1,14 +1,24 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useModal } from '../../context/ModalContext';
+import { useToast } from '../../context/ToastContext';
 
 export default function Sidebar({ isOpen, onClose }) {
+  const navigate = useNavigate();
   const { getDashboardMetrics, settings } = useData();
   const { user, logout } = useAuth();
   const { openNewOrder } = useModal();
+  const { showToast } = useToast();
   const metrics = getDashboardMetrics();
+
+  const handleLogout = async () => {
+    onClose?.();
+    await logout();
+    showToast('Has cerrado sesión correctamente');
+    navigate('/login');
+  };
 
   const navItems = [
     { section: 'Operación Taller' },
@@ -130,33 +140,49 @@ export default function Sidebar({ isOpen, onClose }) {
           })}
         </nav>
 
-        {/* Pie del Menú con usuario y versión */}
-        <div className="p-4 border-t border-dark-border text-xs text-gray-500 flex flex-col gap-2">
+        {/* Pie del Menú con usuario y estado del sistema */}
+        <div className="p-3.5 border-t border-dark-border bg-black/20 flex flex-col gap-2.5">
           {user && (
-            <div className="flex items-center justify-between text-gray-400 bg-black/20 p-2 rounded-lg border border-dark-border/60">
-              <div className="flex items-center gap-2 min-w-0">
-                <i className="fa-solid fa-user-circle text-amber-500 text-sm shrink-0"></i>
-                <span className="truncate text-[11px] text-gray-300 font-medium">
-                  {user.email || 'Admin'}
-                </span>
+            <div className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-dark-border transition-all">
+              {/* Avatar + Datos de usuario */}
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-500 font-bold text-xs uppercase shadow-[0_0_12px_rgba(245,158,11,0.15)]">
+                  {user.email ? user.email.charAt(0).toUpperCase() : <i className="fa-solid fa-user text-xs"></i>}
+                </div>
+                <div className="min-w-0 flex flex-col justify-center">
+                  <span className="truncate text-xs font-bold text-gray-200 leading-tight">
+                    {user.email ? user.email.split('@')[0] : 'Administrador'}
+                  </span>
+                  <span className="text-[10px] text-gray-400 truncate leading-tight mt-0.5 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span className="truncate max-w-[130px]">{user.email || 'Admin'}</span>
+                  </span>
+                </div>
               </div>
+
+              {/* Botón Cerrar Sesión */}
               <button
                 type="button"
-                className="text-gray-400 hover:text-red-400 p-1 transition-colors cursor-pointer"
-                onClick={async () => {
-                  onClose?.();
-                  await logout();
-                }}
+                className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:border-red-500/40 hover:bg-red-500/15 text-gray-400 hover:text-red-400 flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95 group shadow-sm"
+                onClick={handleLogout}
                 title="Cerrar sesión"
+                aria-label="Cerrar sesión"
               >
-                <i className="fa-solid fa-right-from-bracket"></i>
+                <i className="fa-solid fa-right-from-bracket text-xs group-hover:translate-x-0.5 transition-transform"></i>
               </button>
             </div>
           )}
 
-          <div className="flex items-center justify-between text-[11px] px-1 text-gray-500">
-            <span>MotoFix Pro v1.0</span>
-            <i className="fa-solid fa-shield-halved text-amber-500"></i>
+          {/* Versión y seguridad */}
+          <div className="flex items-center justify-between text-[10px] px-1 text-gray-400 font-medium">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              MotoFix Pro v1.0
+            </span>
+            <span className="text-gray-400 flex items-center gap-1">
+              <i className="fa-solid fa-shield-halved text-amber-500/80 text-[11px]"></i>
+              <span>Protegido</span>
+            </span>
           </div>
         </div>
       </aside>

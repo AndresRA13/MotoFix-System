@@ -1,8 +1,6 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
-import { useToast } from '../../context/ToastContext';
 import { useModal } from '../../context/ModalContext';
 
 const TITLES = {
@@ -46,20 +44,11 @@ const TITLES = {
 
 export default function Topbar({ onOpenNewOrder, onToggleMenu }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
   const { settings } = useData();
-  const { showToast } = useToast();
   const { openNewOrder } = useModal();
 
   const currentTab = location.pathname.replace(/^\//, '').split('/')[0] || 'dashboard';
   const titleInfo = TITLES[currentTab] || TITLES.dashboard;
-
-  const handleLogout = async () => {
-    await logout();
-    showToast('Has cerrado sesión');
-    navigate('/login');
-  };
 
   const handleNewOrder = onOpenNewOrder || openNewOrder;
 
@@ -101,25 +90,14 @@ export default function Topbar({ onOpenNewOrder, onToggleMenu }) {
           <span className="xs:hidden">Orden</span>
         </button>
 
-        {/* Perfil y Salida Rápida */}
-        {user && (
-          <button
-            type="button"
-            className="h-9 px-2.5 sm:px-3 rounded-lg bg-white/5 border border-dark-border text-gray-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
-            onClick={handleLogout}
-            title={`Cerrar Sesión (${user.email || ''})`}
-          >
-            <i className="fa-solid fa-right-from-bracket text-xs text-amber-500"></i>
-            <span className="hidden md:inline text-xs text-gray-300">
-              {user.email ? user.email.split('@')[0] : 'Salir'}
-            </span>
-          </button>
-        )}
-
-        {/* Insignia del Taller (Desktop) */}
-        <div className="hidden lg:flex items-center gap-2 bg-white/[0.03] border border-dark-border px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-200">
-          <i className="fa-solid fa-store text-amber-500"></i>
-          <span className="max-w-[130px] truncate">{settings?.name || 'MotoFix Pro'}</span>
+        {/* Insignia del Taller con Indicador de Sistema Activo */}
+        <div className="hidden sm:flex items-center gap-2.5 bg-white/[0.03] border border-dark-border px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-200">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <i className="fa-solid fa-store text-amber-500 text-xs"></i>
+          <span className="max-w-[150px] truncate">{settings?.name || 'MotoFix Pro'}</span>
         </div>
       </div>
     </header>
