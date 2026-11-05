@@ -45,33 +45,49 @@ export default function HistoryView({ onViewDetail, onPrintOrder, onPrintDirectS
 
   const filteredDeliveredOrders = useMemo(() => {
     // Include both delivered/paid orders and cancelled/anulada orders in the history
-    const historyList = workOrders.filter(
-      (o) => o.status === 'entregada' || o.isPaid || o.status === 'cancelada'
+    const historyList = (workOrders || []).filter(
+      (o) => o && (o.status === 'entregada' || o.isPaid || o.status === 'cancelada')
     );
     const q = search.toLowerCase();
 
-    return historyList.filter((o) => {
-      const vehicle = getVehicleById(o.vehicleId) || {};
-      const client = getClientById(o.clientId) || {};
+    return historyList
+      .filter((o) => {
+        const vehicle = getVehicleById(o.vehicleId) || {};
+        const client = getClientById(o.clientId) || {};
 
-      return (
-        o.orderNumber.toString().includes(q) ||
-        (vehicle.plate && vehicle.plate.toLowerCase().includes(q)) ||
-        (client.name && client.name.toLowerCase().includes(q))
-      );
-    });
+        return (
+          o.orderNumber.toString().includes(q) ||
+          (vehicle.plate && vehicle.plate.toLowerCase().includes(q)) ||
+          (client.name && client.name.toLowerCase().includes(q))
+        );
+      })
+      .sort((a, b) => {
+        // Orden descendente por fecha de entrega/ingreso o por número de orden más reciente primero
+        const dateA = new Date(a.deliveryDate || a.entryDate).getTime() || 0;
+        const dateB = new Date(b.deliveryDate || b.entryDate).getTime() || 0;
+        if (dateB !== dateA) return dateB - dateA;
+        return (b.orderNumber || 0) - (a.orderNumber || 0);
+      });
   }, [workOrders, getVehicleById, getClientById, search]);
 
   const filteredDirectSales = useMemo(() => {
     const q = search.toLowerCase();
 
-    return sales.filter((s) => {
-      return (
-        s.saleNumber.toString().includes(q) ||
-        (s.clientName && s.clientName.toLowerCase().includes(q)) ||
-        (s.items && s.items.some((i) => i.name.toLowerCase().includes(q)))
-      );
-    });
+    return (sales || [])
+      .filter((s) => {
+        if (!s) return false;
+        return (
+          s.saleNumber.toString().includes(q) ||
+          (s.clientName && s.clientName.toLowerCase().includes(q)) ||
+          (s.items && s.items.some((i) => i.name.toLowerCase().includes(q)))
+        );
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.date).getTime() || 0;
+        const dateB = new Date(b.date).getTime() || 0;
+        if (dateB !== dateA) return dateB - dateA;
+        return (b.saleNumber || 0) - (a.saleNumber || 0);
+      });
   }, [sales, search]);
 
   const handleCancelSale = (saleId) => {
