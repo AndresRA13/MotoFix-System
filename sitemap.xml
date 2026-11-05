@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <url>
+    <loc>https://arktechlabs.netlify.app/</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://arktechlabs.netlify.app/"/>
+  </url>
+
+  <url>
+    <loc>https://arktechlabs.netlify.app/about</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://arktechlabs.netlify.app/about"/>
+  </url>
+
+  <url>
+    <loc>https://arktechlabs.netlify.app/services</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://arktechlabs.netlify.app/services"/>
+  </url>
+
+  <url>
+    <loc>https://arktechlabs.netlify.app/projects</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://arktechlabs.netlify.app/projects"/>
+  </url>
+
+  <url>
+    <loc>https://arktechlabs.netlify.app/skills</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://arktechlabs.netlify.app/skills"/>
+  </url>
+
+  <url>
+    <loc>https://arktechlabs.netlify.app/contact</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://arktechlabs.netlify.app/contact"/>
+  </url>
+
+</urlset>

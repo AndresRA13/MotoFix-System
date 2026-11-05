@@ -1,0 +1,25 @@
+{
+  "short_name": "MotoFix Pro",
+  "name": "MotoFix Pro - Taller de Motocicletas",
+  "description": "Sistema PWA de Gestión Integral para Taller de Motocicletas y Repuestos.",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090d16",
+  "theme_color": "#090d16"
+}
