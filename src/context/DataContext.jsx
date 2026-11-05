@@ -235,8 +235,78 @@ export function DataProvider({ children }) {
         vehicle.clientId = client.id;
       }
 
-      commitStore({ ...data, clients, vehicles });
-      return { client, vehicle };
+      // NOTE: Does NOT call commitStore — returns updated arrays for atomic saves
+      return { client, vehicle, clients, vehicles };
+    },
+    [data]
+  );
+
+  /**
+   * Saves client + vehicle + work order in ONE atomic commitStore call,
+   * preventing the stale-closure bug where saveWorkOrder would overwrite
+   * the clients/vehicles written by saveClientAndVehicle.
+   */
+  const saveFullOrder = useCallback(
+    (clientData, vehicleData, orderData) => {
+      // --- Resolve client ---
+      const clients = [...(data.clients || [])];
+      let client = clients.find(
+        (c) =>
+          (clientData.document && c.document === clientData.document) ||
+          (clientData.id && c.id === clientData.id)
+      );
+      if (!client) {
+        client = { id: 'c_' + Date.now(), ...clientData };
+        clients.push(client);
+      } else {
+        Object.assign(client, clientData);
+      }
+
+      // --- Resolve vehicle ---
+      const vehicles = [...(data.vehicles || [])];
+      let vehicle = vehicles.find(
+        (v) => vehicleData.plate && v.plate.toUpperCase() === vehicleData.plate.toUpperCase()
+      );
+      if (!vehicle) {
+        vehicle = {
+          id: 'v_' + (Date.now() + 1),
+          clientId: client.id,
+          ...vehicleData,
+          plate: vehicleData.plate.toUpperCase()
+        };
+        vehicles.push(vehicle);
+      } else {
+        Object.assign(vehicle, vehicleData);
+        vehicle.plate = vehicleData.plate.toUpperCase();
+        vehicle.clientId = client.id;
+      }
+
+      // --- Resolve work order ---
+      const workOrders = [...(data.workOrders || [])];
+      let saved = { ...orderData, clientId: client.id, vehicleId: vehicle.id };
+
+      if (!saved.id) {
+        const orders = data.workOrders || [];
+        const maxNum = orders.length === 0 ? 1000 : Math.max(...orders.map((o) => o.orderNumber || 1000));
+        saved.id = 'ot-' + Date.now();
+        saved.orderNumber = maxNum + 1;
+        saved.entryDate = saved.entryDate || new Date().toISOString();
+        saved.status = saved.status || 'recibida';
+        saved.isPaid = false;
+        workOrders.unshift(saved);
+      } else {
+        const idx = workOrders.findIndex((o) => o.id === saved.id);
+        if (idx !== -1) {
+          workOrders[idx] = { ...workOrders[idx], ...saved };
+          saved = workOrders[idx];
+        } else {
+          workOrders.unshift(saved);
+        }
+      }
+
+      // ONE atomic commit — all collections saved together
+      commitStore({ ...data, clients, vehicles, workOrders });
+      return saved;
     },
     [data, commitStore]
   );
@@ -378,25 +448,93 @@ export function DataProvider({ children }) {
     const inventory = data.inventory || [];
     const sales = data.sales || [];
 
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(todayStart.getDate() - 6); // last 7 days
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const isToday = (dateStr) => dateStr && new Date(dateStr) >= todayStart;
+    const isThisWeek = (dateStr) => dateStr && new Date(dateStr) >= weekStart;
+    const isThisMonth = (dateStr) => dateStr && new Date(dateStr) >= monthStart;
+
+    // Active / status counts
     const activeOrders = orders.filter((o) => o.status !== 'entregada' && o.status !== 'cancelada');
     const readyOrders = orders.filter((o) => o.status === 'lista');
 
-    const workOrderRevenue = orders
-      .filter((o) => o.isPaid || o.status === 'entregada')
-      .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    // Revenue from paid work orders
+    const paidOrders = orders.filter((o) => o.isPaid || o.status === 'entregada');
+    const workOrderRevenue = paidOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-    const directSalesRevenue = sales
-      .filter((s) => !s.isCancelled && s.status !== 'anulada')
-      .reduce((sum, s) => sum + (s.totalAmount || 0), 0);
-
+    // Revenue from direct sales (non-cancelled)
+    const activeSales = sales.filter((s) => !s.isCancelled && s.status !== 'anulada');
+    const directSalesRevenue = activeSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
     const totalRevenue = workOrderRevenue + directSalesRevenue;
-    const lowStockParts = inventory.filter((p) => p.stock <= p.minStock);
+
+    // TODAY metrics
+    const todayOrders = paidOrders.filter((o) => isToday(o.deliveryDate || o.entryDate));
+    const todayOrderRevenue = todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const todaySales = activeSales.filter((s) => isToday(s.date));
+    const todaySalesRevenue = todaySales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+    const todayRevenue = todayOrderRevenue + todaySalesRevenue;
+    const todayOrdersCount = todayOrders.length + todaySales.length;
+
+    // WEEK metrics
+    const weekOrders = paidOrders.filter((o) => isThisWeek(o.deliveryDate || o.entryDate));
+    const weekOrderRevenue = weekOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const weekSales = activeSales.filter((s) => isThisWeek(s.date));
+    const weekSalesRevenue = weekSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+    const weekRevenue = weekOrderRevenue + weekSalesRevenue;
+
+    // MONTH metrics
+    const monthOrders = paidOrders.filter((o) => isThisMonth(o.deliveryDate || o.entryDate));
+    const monthOrderRevenue = monthOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const monthSales = activeSales.filter((s) => isThisMonth(s.date));
+    const monthSalesRevenue = monthSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+    const monthRevenue = monthOrderRevenue + monthSalesRevenue;
+
+    // Inventory
+    const lowStockParts = inventory.filter((p) => p.stock <= (p.minStock || 0));
+
+    // Status breakdown for chart
+    const statusCounts = {
+      recibida: orders.filter((o) => o.status === 'recibida').length,
+      diagnostico: orders.filter((o) => o.status === 'diagnostico').length,
+      reparacion: orders.filter((o) => o.status === 'reparacion').length,
+      lista: orders.filter((o) => o.status === 'lista').length,
+      entregada: orders.filter((o) => o.status === 'entregada').length,
+    };
+
+    // Top mechanic by completed orders this month
+    const mechanicStats = {};
+    monthOrders.forEach((o) => {
+      if (o.mechanicName) {
+        mechanicStats[o.mechanicName] = (mechanicStats[o.mechanicName] || 0) + 1;
+      }
+    });
+    const topMechanic = Object.entries(mechanicStats).sort((a, b) => b[1] - a[1])[0];
 
     return {
       activeOrdersCount: activeOrders.length,
       readyOrdersCount: readyOrders.length,
       totalRevenue,
-      lowStockCount: lowStockParts.length
+      lowStockCount: lowStockParts.length,
+      // Daily
+      todayRevenue,
+      todayOrdersCount,
+      todayOrderRevenue,
+      todaySalesRevenue,
+      // Weekly
+      weekRevenue,
+      weekOrdersCount: weekOrders.length + weekSales.length,
+      // Monthly
+      monthRevenue,
+      monthOrdersCount: monthOrders.length + monthSales.length,
+      // Extra
+      statusCounts,
+      topMechanic: topMechanic ? { name: topMechanic[0], count: topMechanic[1] } : null,
+      totalOrdersCount: orders.length,
+      completedOrdersCount: paidOrders.length,
     };
   }, [data.workOrders, data.inventory, data.sales]);
 
@@ -446,6 +584,7 @@ export function DataProvider({ children }) {
         getClientById,
         getVehicleById,
         saveClientAndVehicle,
+        saveFullOrder,
         workOrders: getWorkOrders(),
         saveWorkOrder,
         updateOrderStatus,

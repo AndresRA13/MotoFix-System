@@ -3,6 +3,7 @@ import PlateBadge from '../common/PlateBadge';
 import StatusBadge from '../common/StatusBadge';
 import { useData } from '../../context/DataContext';
 import { useModal } from '../../context/ModalContext';
+import { useToast } from '../../context/ToastContext';
 import { formatMoney, formatDate } from '../../utils/formatters';
 
 export default function OrdersView({ onOpenNewOrder, onEditOrder, onViewDetail }) {
@@ -11,11 +12,25 @@ export default function OrdersView({ onOpenNewOrder, onEditOrder, onViewDetail }
   const handleEditOrder = onEditOrder || openEditOrder;
   const handleViewDetail = onViewDetail || openOrderDetail;
 
-  const { workOrders, getVehicleById, getClientById, settings } = useData();
+  const { workOrders, getVehicleById, getClientById, settings, updateOrderStatus } = useData();
+  const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('active_all');
 
   const currency = settings?.currency || '$';
+
+  const STATUS_OPTIONS = [
+    { value: 'recibida',    label: '📋 Recibida' },
+    { value: 'diagnostico', label: '🔍 En Diagnóstico' },
+    { value: 'reparacion',  label: '🔧 En Reparación' },
+    { value: 'lista',       label: '✅ Lista para Entrega' },
+  ];
+
+  const handleStatusChange = (orderId, newStatus, orderNumber) => {
+    updateOrderStatus(orderId, newStatus);
+    const label = STATUS_OPTIONS.find((s) => s.value === newStatus)?.label || newStatus;
+    showToast(`Orden #${orderNumber} → ${label}`);
+  };
 
   const filteredOrders = useMemo(() => {
     const active = workOrders.filter((o) => o.status !== 'entregada');
@@ -122,7 +137,16 @@ export default function OrdersView({ onOpenNewOrder, onEditOrder, onViewDetail }
                       {o.mechanicName || 'Taller'}
                     </td>
                     <td className="px-5 py-4 border-b border-white/[0.03]">
-                      <StatusBadge status={o.status} />
+                      <select
+                        className="bg-dark-bg border border-dark-border rounded-lg px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-amber-500 cursor-pointer transition-all"
+                        value={o.status}
+                        onChange={(e) => handleStatusChange(o.id, e.target.value, o.orderNumber)}
+                        style={{ colorScheme: 'dark' }}
+                      >
+                        {STATUS_OPTIONS.map((s) => (
+                          <option key={s.value} value={s.value}>{s.label}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-5 py-4 border-b border-white/[0.03] text-gray-400 text-xs">
                       {formatDate(o.entryDate)}

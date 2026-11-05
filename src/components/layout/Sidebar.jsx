@@ -29,6 +29,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { id: 'clients', path: '/clients', label: 'Clientes & Motos', icon: 'fa-address-book' },
 
     { section: 'Sistema' },
+    { id: 'reports', path: '/reports', label: 'Reportes & Estadísticas', icon: 'fa-chart-line' },
     { id: 'settings', path: '/settings', label: 'Configuración', icon: 'fa-sliders' }
   ];
 

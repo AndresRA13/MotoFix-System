@@ -31,6 +31,7 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
   // Mode 2: Direct Sale Cart
   const [directClientName, setDirectClientName] = useState('');
   const [selectedPartId, setSelectedPartId] = useState('');
+  const [partSearch, setPartSearch] = useState('');
   const [partQty, setPartQty] = useState(1);
   const [cartItems, setCartItems] = useState([]);
 
@@ -38,10 +39,19 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
   const [paymentMethod, setPaymentMethod] = useState('Efectivo');
   const [cashReceived, setCashReceived] = useState('');
 
+  // Status priority for display ordering
+  const STATUS_PRIORITY = { lista: 0, reparacion: 1, diagnostico: 2, recibida: 3 };
+  const STATUS_LABEL = {
+    lista: '✅ Lista',
+    reparacion: '🔧 En Reparación',
+    diagnostico: '🔍 En Diagnóstico',
+    recibida: '📋 Recibida',
+  };
+
   const payableOrders = useMemo(() => {
-    return workOrders.filter(
-      (o) => o.status === 'lista' || (o.status === 'reparacion' && !o.isPaid)
-    );
+    return workOrders
+      .filter((o) => o.status !== 'entregada' && o.status !== 'cancelada' && !o.isPaid)
+      .sort((a, b) => (STATUS_PRIORITY[a.status] ?? 9) - (STATUS_PRIORITY[b.status] ?? 9));
   }, [workOrders]);
 
   const selectedOrder = useMemo(() => {
@@ -96,6 +106,7 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
     });
 
     setSelectedPartId('');
+    setPartSearch('');
     setPartQty(1);
     showToast('Repuesto añadido al carrito de venta');
   };
@@ -138,6 +149,8 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
       handlePrintDirectSale(savedSale);
       setCartItems([]);
       setDirectClientName('');
+      setSelectedPartId('');
+      setPartSearch('');
       setCashReceived('');
     }
   };
@@ -200,9 +213,10 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
                   </option>
                   {payableOrders.map((o) => {
                     const v = getVehicleById(o.vehicleId) || {};
+                    const statusLabel = STATUS_LABEL[o.status] || o.status;
                     return (
                       <option key={o.id} value={o.id}>
-                        Orden #{o.orderNumber} - Placa: {v.plate || 'N/A'} - Total:{' '}
+                        Orden #{o.orderNumber} [{statusLabel}] - Placa: {v.plate || 'N/A'} - Total:{' '}
                         {formatMoney(o.totalAmount, currency)}
                       </option>
                     );
@@ -271,43 +285,126 @@ export default function PosView({ onPrintOrder, onPrintDirectSale }) {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 items-end">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">
-                    Seleccionar Repuesto
-                  </label>
-                  <select
-                    className="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-gray-100 text-xs focus:outline-none focus:border-amber-500"
-                    value={selectedPartId}
-                    onChange={(e) => setSelectedPartId(e.target.value)}
-                  >
-                    <option value="">-- Seleccionar Repuesto en Stock --</option>
-                    {inventory.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.code}) - Stock: {p.stock} - {formatMoney(p.sellPrice, currency)}
-                      </option>
-                    ))}
-                  </select>
+              <div className="mb-4">
+                <label className="block text-xs font-semibold text-gray-400 mb-1.5">
+                  <i className="fa-solid fa-magnifying-glass text-amber-500 mr-1.5"></i>
+                  Buscar Repuesto en Stock
+                </label>
+
+                {/* Search input */}
+                <div className="relative mb-2">
+                  <input
+                    type="text"
+                    className="w-full bg-white/[0.04] border border-dark-border rounded-xl pl-4 pr-9 py-2.5 text-gray-100 text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 placeholder:text-gray-600 transition-all"
+                    placeholder="Escribe nombre o código del repuesto..."
+                    value={partSearch}
+                    onChange={(e) => { setPartSearch(e.target.value); setSelectedPartId(''); }}
+                    autoComplete="off"
+                  />
+                  {partSearch ? (
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-200 cursor-pointer transition-colors"
+                      onClick={() => { setPartSearch(''); setSelectedPartId(''); }}
+                    >
+                      <i className="fa-solid fa-xmark"></i>
+                    </button>
+                  ) : (
+                    <i className="fa-solid fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none text-xs"></i>
+                  )}
                 </div>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="block text-xs font-semibold text-gray-400 mb-1.5">Cant.</label>
-                    <input
-                      type="number"
-                      className="w-full bg-white/[0.03] border border-dark-border rounded-lg px-3 py-2 text-gray-100 text-xs text-center focus:outline-none focus:border-amber-500"
-                      value={partQty}
-                      min="1"
-                      onChange={(e) => setPartQty(Math.max(1, parseInt(e.target.value) || 1))}
-                    />
+
+                {/* Results */}
+                {partSearch.trim().length === 0 ? (
+                  <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white/[0.02] border border-dashed border-white/10 text-gray-600 text-xs">
+                    <i className="fa-solid fa-wand-magic-sparkles text-amber-500/40 text-sm"></i>
+                    Escribe para buscar entre los repuestos en stock
                   </div>
-                  <button
-                    type="button"
-                    className="h-9 px-3.5 rounded-lg bg-white/10 hover:bg-white/15 text-white transition-all flex items-center justify-center cursor-pointer shrink-0"
-                    onClick={handleAddPartToCart}
-                  >
-                    <i className="fa-solid fa-plus"></i>
-                  </button>
+                ) : (() => {
+                  const MAX = 12;
+                  const q = partSearch.toLowerCase().trim();
+                  const matched = inventory.filter(
+                    (p) => p.name.toLowerCase().includes(q) || (p.code && p.code.toLowerCase().includes(q))
+                  );
+
+                  if (matched.length === 0) {
+                    return (
+                      <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/10 text-gray-500 text-xs">
+                        <i className="fa-solid fa-circle-xmark text-red-400/60"></i>
+                        Sin resultados para <span className="text-gray-300 font-medium ml-1">"{partSearch}"</span>
+                      </div>
+                    );
+                  }
+
+                  const slice = matched.slice(0, MAX);
+                  return (
+                    <>
+                      <div className="rounded-xl border border-white/10 bg-[#1a1a1a] overflow-hidden shadow-xl max-h-48 overflow-y-auto">
+                        <div className="px-3 py-1.5 bg-white/[0.03] border-b border-white/5 sticky top-0">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400/80">📦 Repuestos disponibles</span>
+                        </div>
+                        {slice.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            className={`w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-amber-500/10 transition-colors cursor-pointer border-b border-white/[0.03] ${selectedPartId === p.id ? 'bg-amber-500/15 border-l-2 border-l-amber-500' : ''} ${p.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            onClick={() => p.stock > 0 && setSelectedPartId(p.id)}
+                            disabled={p.stock === 0}
+                          >
+                            <div className="flex flex-col min-w-0 pr-3">
+                              <span className="text-xs text-gray-200 font-medium truncate">{p.name}</span>
+                              <span className="text-[10px] text-gray-500">
+                                Cód: {p.code} · Stock:{' '}
+                                <span className={p.stock <= (p.minStock || 0) ? 'text-red-400 font-bold' : 'text-emerald-400 font-semibold'}>
+                                  {p.stock}{p.stock === 0 ? ' — Sin stock' : ''}
+                                </span>
+                              </span>
+                            </div>
+                            <span className="text-xs font-bold text-amber-400 shrink-0">{formatMoney(p.sellPrice, currency)}</span>
+                          </button>
+                        ))}
+                        {matched.length > MAX && (
+                          <div className="px-4 py-2 text-[10px] text-gray-600 text-center border-t border-white/5">
+                            {matched.length - MAX} más — afina la búsqueda
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Selected item preview */}
+                      {selectedPartId && (() => {
+                        const sel = inventory.find((p) => p.id === selectedPartId);
+                        return sel ? (
+                          <div className="mt-2 flex items-center justify-between px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs">
+                            <span className="text-amber-300 font-semibold truncate pr-2">✅ {sel.name}</span>
+                            <span className="text-amber-400 font-bold shrink-0">{formatMoney(sel.sellPrice, currency)}</span>
+                          </div>
+                        ) : null;
+                      })()}
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Qty + Add button */}
+              <div className="flex gap-3 mb-4 items-end">
+                <div className="w-28">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">Cantidad</label>
+                  <input
+                    type="number"
+                    className="w-full bg-white/[0.03] border border-dark-border rounded-xl px-3 py-2.5 text-gray-100 text-sm text-center focus:outline-none focus:border-amber-500 transition-all"
+                    value={partQty}
+                    min="1"
+                    onChange={(e) => setPartQty(Math.max(1, parseInt(e.target.value) || 1))}
+                  />
                 </div>
+                <button
+                  type="button"
+                  className="flex-1 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold text-sm hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+                  onClick={handleAddPartToCart}
+                  disabled={!selectedPartId}
+                >
+                  <i className="fa-solid fa-plus"></i> Añadir al Carrito
+                </button>
               </div>
 
               <div className="bg-black/30 p-3.5 rounded-lg border border-dark-border overflow-x-auto">

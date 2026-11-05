@@ -13,6 +13,7 @@ import MechanicsView from './components/mechanics/MechanicsView';
 import InventoryView from './components/inventory/InventoryView';
 import ClientsView from './components/clients/ClientsView';
 import SettingsView from './components/settings/SettingsView';
+import ReportsView from './components/reports/ReportsView';
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/inventory" element={<InventoryView />} />
           <Route path="/clients" element={<ClientsView />} />
           <Route path="/settings" element={<SettingsView />} />
+          <Route path="/reports" element={<ReportsView />} />
         </Route>
       </Route>
 

@@ -37,6 +37,10 @@ const TITLES = {
   settings: {
     main: 'Configuración del Taller',
     sub: 'Datos de la empresa y copias de seguridad'
+  },
+  reports: {
+    main: 'Reportes & Estadísticas',
+    sub: 'Consulta el rendimiento del taller por período de tiempo'
   }
 };
 

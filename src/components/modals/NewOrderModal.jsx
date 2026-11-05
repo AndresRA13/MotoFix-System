@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 import { formatMoney } from '../../utils/formatters';
@@ -16,8 +16,7 @@ export default function NewOrderModal({
     workOrders,
     getClientById,
     getVehicleById,
-    saveClientAndVehicle,
-    saveWorkOrder,
+    saveFullOrder,
     settings
   } = useData();
   const { showToast } = useToast();
@@ -46,6 +45,7 @@ export default function NewOrderModal({
   const [selectedItemKey, setSelectedItemKey] = useState('');
   const [itemQty, setItemQty] = useState(1);
   const [draftItems, setDraftItems] = useState([]);
+  const [itemSearch, setItemSearch] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -96,6 +96,8 @@ export default function NewOrderModal({
     setDraftItems([]);
     setSelectedItemKey('');
     setItemQty(1);
+    setItemSearch('');
+    setItemSearch('');
   }, [isOpen, editingOrderId, workOrders, getClientById, getVehicleById, mechanics]);
 
   if (!isOpen) return null;
@@ -106,8 +108,11 @@ export default function NewOrderModal({
       return;
     }
 
-    const [type, id] = selectedItemKey.split('_');
-    const qty = parseInt(itemQty) || 1;
+    // Split only on the FIRST underscore — IDs themselves contain underscores (e.g. "p_1234567890")
+    const firstUnderscore = selectedItemKey.indexOf('_');
+    const type = selectedItemKey.slice(0, firstUnderscore);       // "part" | "service"
+    const id   = selectedItemKey.slice(firstUnderscore + 1);      // "p_1234567890" | "s_1234567890"
+    const qty  = parseInt(itemQty) || 1;
 
     if (type === 'part') {
       const part = inventory.find((p) => p.id === id);
@@ -122,7 +127,9 @@ export default function NewOrderModal({
             price: part.sellPrice
           }
         ]);
-        showToast('Repuesto añadido a la orden');
+        showToast(`✅ "${part.name}" añadido a la orden`);
+      } else {
+        showToast('No se encontró el repuesto en inventario', 'danger');
       }
     } else if (type === 'service') {
       const service = services.find((s) => s.id === id);
@@ -137,12 +144,15 @@ export default function NewOrderModal({
             price: service.price
           }
         ]);
-        showToast('Servicio añadido a la orden');
+        showToast(`✅ "${service.name}" añadido a la orden`);
+      } else {
+        showToast('No se encontró el servicio', 'danger');
       }
     }
 
     setSelectedItemKey('');
     setItemQty(1);
+    setItemSearch('');
   };
 
   const handleRemoveDraftItem = (index) => {
@@ -159,15 +169,8 @@ export default function NewOrderModal({
       return;
     }
 
-    const { client, vehicle } = saveClientAndVehicle(
-      { name: clientName.trim(), phone: phone.trim(), document: doc.trim() },
-      { plate: plate.trim(), brand: brand.trim(), km: parseInt(km) || 0, fuelLevel: fuel }
-    );
-
     const orderData = {
       id: editingOrderId || undefined,
-      clientId: client.id,
-      vehicleId: vehicle.id,
       mechanicName: mechanic,
       issueDescription: issue.trim(),
       visualCheck: {
@@ -181,7 +184,13 @@ export default function NewOrderModal({
       totalAmount
     };
 
-    const saved = saveWorkOrder(orderData);
+    // Single atomic save: client + vehicle + order in one commitStore call
+    const saved = saveFullOrder(
+      { name: clientName.trim(), phone: phone.trim(), document: doc.trim() },
+      { plate: plate.trim(), brand: brand.trim(), km: parseInt(km) || 0, fuelLevel: fuel },
+      orderData
+    );
+
     showToast(`Orden #${saved.orderNumber} guardada exitosamente`);
     onClose();
   };
@@ -419,50 +428,135 @@ export default function NewOrderModal({
                 3. REPUESTOS Y MANO DE OBRA REQUERIDOS
               </h4>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end mb-3">
-                <div className="sm:col-span-2">
+              {/* Search + Add row */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-3">
+                {/* Autocomplete search */}
+                <div className="flex-1 relative">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">
-                    Agregar Repuesto o Servicio
+                    <i className="fa-solid fa-magnifying-glass text-amber-500 mr-1.5"></i>
+                    Buscar Repuesto o Servicio
                   </label>
-                  <select
-                    className="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-gray-100 text-xs focus:outline-none focus:border-amber-500"
-                    value={selectedItemKey}
-                    onChange={(e) => setSelectedItemKey(e.target.value)}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className="w-full bg-white/[0.04] border border-dark-border rounded-xl pl-4 pr-9 py-2.5 text-gray-100 text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 placeholder:text-gray-600 transition-all"
+                      placeholder="Escribe nombre o código..."
+                      value={itemSearch}
+                      onChange={(e) => { setItemSearch(e.target.value); setSelectedItemKey(''); }}
+                      autoComplete="off"
+                    />
+                    {itemSearch ? (
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-200 cursor-pointer transition-colors"
+                        onClick={() => { setItemSearch(''); setSelectedItemKey(''); }}
+                      >
+                        <i className="fa-solid fa-xmark"></i>
+                      </button>
+                    ) : (
+                      <i className="fa-solid fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none text-xs"></i>
+                    )}
+                  </div>
+
+                  {/* Results dropdown */}
+                  {itemSearch.trim().length === 0 ? (
+                    <div className="mt-2 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white/[0.02] border border-dashed border-white/10 text-gray-600 text-xs">
+                      <i className="fa-solid fa-wand-magic-sparkles text-amber-500/40 text-sm"></i>
+                      Escribe para buscar en inventario y tarifario de servicios
+                    </div>
+                  ) : (() => {
+                    const MAX = 12;
+                    const q = itemSearch.toLowerCase().trim();
+                    const matchedServices = services.filter((s) => s.name.toLowerCase().includes(q));
+                    const matchedParts = inventory.filter(
+                      (p) => p.name.toLowerCase().includes(q) || (p.code && p.code.toLowerCase().includes(q))
+                    );
+                    const totalResults = matchedServices.length + matchedParts.length;
+
+                    if (totalResults === 0) {
+                      return (
+                        <div className="mt-2 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/10 text-gray-500 text-xs">
+                          <i className="fa-solid fa-circle-xmark text-red-400/60"></i>
+                          Sin resultados para <span className="text-gray-300 font-medium ml-1">"{itemSearch}"</span>
+                        </div>
+                      );
+                    }
+
+                    const svcSlice = matchedServices.slice(0, MAX);
+                    const partSlice = matchedParts.slice(0, Math.max(0, MAX - svcSlice.length));
+
+                    return (
+                      <div className="mt-2 rounded-xl border border-white/10 bg-[#1a1a1a] overflow-hidden shadow-xl max-h-52 overflow-y-auto">
+                        {svcSlice.length > 0 && (
+                          <>
+                            <div className="px-3 py-1.5 bg-white/[0.03] border-b border-white/5 sticky top-0">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500/80">🔧 Servicios</span>
+                            </div>
+                            {svcSlice.map((s) => (
+                              <button
+                                key={s.id}
+                                type="button"
+                                className={`w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-amber-500/10 transition-colors cursor-pointer border-b border-white/[0.03] ${selectedItemKey === `service_${s.id}` ? 'bg-amber-500/15 border-l-2 border-l-amber-500' : ''}`}
+                                onClick={() => setSelectedItemKey(`service_${s.id}`)}
+                              >
+                                <span className="text-xs text-gray-200 font-medium truncate pr-3">{s.name}</span>
+                                <span className="text-xs font-bold text-amber-400 shrink-0">{formatMoney(s.price, currency)}</span>
+                              </button>
+                            ))}
+                          </>
+                        )}
+                        {partSlice.length > 0 && (
+                          <>
+                            <div className="px-3 py-1.5 bg-white/[0.03] border-b border-white/5 sticky top-0">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400/80">📦 Repuestos</span>
+                            </div>
+                            {partSlice.map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                className={`w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-amber-500/10 transition-colors cursor-pointer border-b border-white/[0.03] ${selectedItemKey === `part_${p.id}` ? 'bg-amber-500/15 border-l-2 border-l-amber-500' : ''}`}
+                                onClick={() => setSelectedItemKey(`part_${p.id}`)}
+                              >
+                                <div className="flex flex-col min-w-0 pr-3">
+                                  <span className="text-xs text-gray-200 font-medium truncate">{p.name}</span>
+                                  <span className="text-[10px] text-gray-500">Cód: {p.code} · Stock: <span className={p.stock <= (p.minStock || 0) ? 'text-red-400 font-bold' : 'text-emerald-400'}>{p.stock}</span></span>
+                                </div>
+                                <span className="text-xs font-bold text-amber-400 shrink-0">{formatMoney(p.sellPrice, currency)}</span>
+                              </button>
+                            ))}
+                          </>
+                        )}
+                        {totalResults > MAX && (
+                          <div className="px-4 py-2 text-[10px] text-gray-600 text-center border-t border-white/5">
+                            {totalResults - MAX} más — afina la búsqueda
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Qty + Add */}
+                <div className="flex sm:flex-col gap-2 sm:w-32 items-end sm:items-stretch">
+                  <div className="flex-1 sm:flex-none">
+                    <label className="block text-xs font-semibold text-gray-400 mb-1.5">Cantidad</label>
+                    <input
+                      type="number"
+                      className="w-full bg-white/[0.03] border border-dark-border rounded-xl px-3 py-2.5 text-gray-100 text-sm text-center focus:outline-none focus:border-amber-500 transition-all"
+                      value={itemQty}
+                      min="1"
+                      onChange={(e) => setItemQty(Math.max(1, parseInt(e.target.value) || 1))}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="flex-1 sm:flex-none sm:mt-auto h-10 px-4 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-black text-xs font-bold hover:brightness-110 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+                    onClick={handleAddItem}
+                    disabled={!selectedItemKey}
                   >
-                    <option value="">-- Buscar en Inventario o Tarifario --</option>
-                    <optgroup label="🔧 MANO DE OBRA / SERVICIOS">
-                      {services.map((s) => (
-                        <option key={s.id} value={`service_${s.id}`}>
-                          [Servicio] {s.name} - {formatMoney(s.price, currency)}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="📦 REPUESTOS Y ACCESORIOS">
-                      {inventory.map((p) => (
-                        <option key={p.id} value={`part_${p.id}`}>
-                          [Repuesto] {p.name} ({p.code}) - Stock: {p.stock} - {formatMoney(p.sellPrice, currency)}
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
+                    <i className="fa-solid fa-plus"></i> Añadir
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">Cantidad</label>
-                  <input
-                    type="number"
-                    className="w-full bg-white/[0.03] border border-dark-border rounded-lg px-3 py-2 text-gray-100 text-xs text-center focus:outline-none focus:border-amber-500"
-                    value={itemQty}
-                    min="1"
-                    onChange={(e) => setItemQty(Math.max(1, parseInt(e.target.value) || 1))}
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="h-9 px-4 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                  onClick={handleAddItem}
-                >
-                  <i className="fa-solid fa-plus text-amber-500"></i> Añadir
-                </button>
               </div>
 
               <div className="bg-black/30 p-3.5 rounded-lg border border-dark-border">
